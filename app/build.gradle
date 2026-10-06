@@ -10,13 +10,26 @@ android {
         applicationId 'pl.sq3tom.clog'
         minSdk 26
         targetSdk 36
-        versionCode 5
-        versionName '0.5'
+        versionCode 7
+        versionName '0.7'
+    }
+
+    signingConfigs {
+        release {
+            def ksPath = System.getenv('CLOG_KEYSTORE_PATH')
+            if (ksPath != null && !ksPath.isEmpty()) {
+                storeFile file(ksPath)
+                storePassword System.getenv('CLOG_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('CLOG_KEY_ALIAS')
+                keyPassword System.getenv('CLOG_KEY_PASSWORD')
+            }
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
         }
     }
 
@@ -28,4 +41,5 @@ android {
 
 dependencies {
     implementation 'androidx.webkit:webkit:1.17.1'
+    implementation 'androidx.core:core:1.17.0'
 }

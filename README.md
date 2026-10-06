@@ -15,3 +15,8 @@ Dodano zaakceptowaną zieloną ikonę aplikacji z napisem C-log. Ikona jest usta
 ## v0.5
 
 Poprawiono ustawienie ikony aplikacji i wzmocniono uruchamianie JavaScript w WebView. Dodano diagnostykę błędów JavaScript.
+
+
+## UI v0.6
+
+Naprawiono blokowanie interfejsu przez niewidoczny overlay dialogu oraz wyłączono automatyczne przyciemnianie WebView. Wersja 0.6 jest przeznaczona do testu funkcjonalnego na Androidzie.

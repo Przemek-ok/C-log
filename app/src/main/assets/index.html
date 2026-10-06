@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#000000">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>C-log v0.5</title>
+<title>C-log v0.7</title>
 <style>
 :root{--bg:#000;--surface:#080808;--surface2:#111;--text:#fff;--muted:#bdbdbd;--line:#777;--accent:#ff2020;--accentText:#fff;--field:#050505;--danger:#ff3030}
 html[data-theme="light"]{--bg:#fff;--surface:#fff;--surface2:#f3f3f3;--text:#111;--muted:#555;--line:#777;--accent:#e51b23;--accentText:#fff;--field:#fff;--danger:#c9151c}
@@ -51,7 +51,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(25
 .list-main{display:flex;justify-content:space-between;gap:8px}.call-list{font-size:17px;font-weight:800}
 .meta{margin-top:4px;color:var(--muted);font-size:13px}.empty{padding:28px 5px;text-align:center;color:var(--muted)}
 .back{margin-bottom:10px}
-.dialog{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);z-index:10}
+.dialog.hidden{display:none!important}.dialog{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);z-index:10}
 .dialog-box{width:100%;max-width:420px;padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text)}
 .dialog h2{margin:0 0 10px;font-size:21px}.dialog p{color:var(--muted);font-size:15px;line-height:1.45}
 .dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}
@@ -116,10 +116,24 @@ function showSettings(){
         </div>
       </div>
       <div class="list-item">
+        <b>AKTUALIZACJA APLIKACJI</b>
+        <div class="theme-note">C-log sprawdza najnowszą wersję bezpośrednio na GitHub i może pobrać APK aktualizacji.</div>
+        <div class="list-actions">
+          <button onclick="checkForUpdate()">⟳ SPRAWDŹ AKTUALIZACJĘ</button>
+        </div>
+      </div>
+      <div class="list-item">
         <b>AKTUALNY MOTYW</b>
         <div class="meta">${settings.theme==='dark'?'Czarne tło / biała czcionka':'Białe tło / czarna czcionka'}</div>
       </div>
     </div>`;
+}
+function checkForUpdate(){
+  if(window.AndroidUpdater && AndroidUpdater.checkForUpdate){
+    AndroidUpdater.checkForUpdate();
+  } else {
+    toast('Aktualizacje są dostępne tylko w APK Android');
+  }
 }
 function setTheme(theme){
   settings.theme=theme;
@@ -328,7 +342,7 @@ function showSpecial(){
   </div></div>
   <div class="card">
     <div class="small-info">Aktywna lista: ${settings.activeList?'<b>'+esc(settings.activeList)+'</b>':'brak'}</div>
-    <div class="theme-note">C-log działa offline. QRZ/GPS dołączymy w kolejnych wersjach.</div>
+    <div class="theme-note">C-log działa offline. Aktualizacje aplikacji są pobierane bezpośrednio z GitHub.</div>
   </div>`;
 }
 function newList(type){
