@@ -68,11 +68,9 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         run: cp app/build/outputs/apk/release/app-release.apk C-log.apk
 
-      - name: Utwórz GitHub Release
+      - name: Dodaj APK do GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" C-log.apk \
-            --title "C-log $GITHUB_REF_NAME" \
-            --generate-notes
+          gh release upload "$GITHUB_REF_NAME" C-log.apk --clobber
