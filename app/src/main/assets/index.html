@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffffff">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>C-log v0.5 — MAX CONTRAST</title>
+<style>
+:root{
+  color-scheme:light!important;
+  background:#ffffff!important;
+  --bg:#ffffff;
+  --fg:#000000;
+  --line:#000000;
+  --accent:#ffd800;
+  --danger:#d90000;
+}
+html,body{
+  margin:0!important;
+  padding:0!important;
+  background:#ffffff!important;
+  color:#000000!important;
+  opacity:1!important;
+  filter:none!important;
+  -webkit-filter:none!important;
+  font-family:Arial,sans-serif!important;
+  min-height:100vh;
+}
+*{
+  box-sizing:border-box!important;
+  opacity:1!important;
+  filter:none!important;
+  -webkit-filter:none!important;
+  text-shadow:none!important;
+}
+.app{
+  max-width:520px;
+  margin:auto;
+  min-height:100vh;
+  padding:10px 10px 20px;
+  background:#ffffff!important;
+  color:#000000!important;
+}
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+  background:#ffffff!important;
+}
+h1{
+  font-size:27px!important;
+  margin:0!important;
+  color:#000000!important;
+  font-weight:900!important;
+}
+.status{
+  font-size:14px!important;
+  color:#000000!important;
+  font-weight:900!important;
+}
+.card{
+  background:#ffffff!important;
+  color:#000000!important;
+  border:3px solid #000000!important;
+  border-radius:8px!important;
+  padding:12px!important;
+  margin-bottom:10px!important;
+  box-shadow:none!important;
+}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{
+  display:block!important;
+  font-size:13px!important;
+  color:#000000!important;
+  margin:0 0 5px 2px!important;
+  font-weight:900!important;
+}
+input,select{
+  width:100%!important;
+  background:#ffffff!important;
+  color:#000000!important;
+  border:3px solid #000000!important;
+  border-radius:6px!important;
+  padding:12px 10px!important;
+  outline:none!important;
+  font-weight:900!important;
+  -webkit-text-fill-color:#000000!important;
+}
+input::placeholder{
+  color:#444444!important;
+  opacity:1!important;
+  -webkit-text-fill-color:#444444!important;
+}
+input:focus,select:focus{
+  border-color:#000000!important;
+  box-shadow:0 0 0 3px #ffd800!important;
+}
+.call{
+  font-size:28px!important;
+  letter-spacing:1px!important;
+  text-transform:uppercase!important;
+  font-weight:900!important;
+}
+.small-info{
+  font-size:15px!important;
+  color:#000000!important;
+  min-height:20px;
+  margin-top:7px;
+  font-weight:800!important;
+}
+.freq input{
+  font-size:22px!important;
+  font-weight:900!important;
+}
+#band{
+  background:#ffd800!important;
+  color:#000000!important;
+  border:3px solid #000000!important;
+  font-size:21px!important;
+  font-weight:900!important;
+}
+.reports{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.report-title{
+  font-size:14px!important;
+  color:#000000!important;
+  text-align:center;
+  margin-bottom:6px;
+  font-weight:900!important;
+}
+.report input{
+  text-align:center!important;
+  font-size:34px!important;
+  font-weight:900!important;
+  padding:10px!important;
+  background:#ffffff!important;
+  color:#000000!important;
+  border:3px solid #000000!important;
+  -webkit-text-fill-color:#000000!important;
+}
+.quick{
+  display:flex;
+  gap:5px;
+  margin-top:6px;
+}
+.quick button{
+  flex:1;
+  background:#ffffff!important;
+  color:#000000!important;
+  border:3px solid #000000!important;
+  border-radius:6px!important;
+  padding:9px 3px!important;
+  font-weight:900!important;
+  font-size:18px!important;
+}
+.primary{
+  width:100%!important;
+  background:#d90000!important;
+  color:#ffffff!important;
+  border:3px solid #000000!important;
+  border-radius:8px!important;
+  padding:16px!important;
+  font-size:20px!important;
+  font-weight:900!important;
+}
+.nav{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:7px;
+  margin-top:10px;
+}
+.nav button,.special button{
+  background:#ffffff!important;
+  color:#000000!important;
+  border:3px solid #000000!important;
+  border-radius:7px!important;
+  padding:13px 5px!important;
+  font-weight:900!important;
+  font-size:15px!important;
+}
+.special-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+}
+.special button.on{
+  border-color:#000000!important;
+  background:#ffd800!important;
+  color:#000000!important;
+}
+.active-badges{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
+.badge{
+  background:#ffd800!important;
+  border:3px solid #000000!important;
+  color:#000000!important;
+  border-radius:15px!important;
+  padding:6px 10px!important;
+  font-size:13px!important;
+  font-weight:900!important;
+}
+.list-item{
+  background:#ffffff!important;
+  color:#000000!important;
+  border:3px solid #000000!important;
+  border-radius:7px!important;
+  padding:10px!important;
+  margin-bottom:7px!important;
+}
+.list-main{display:flex;justify-content:space-between;gap:8px}
+.call-list{
+  font-weight:900!important;
+  color:#000000!important;
+  font-size:17px!important;
+}
+.meta{
+  color:#000000!important;
+  font-size:14px!important;
+  margin-top:4px;
+  font-weight:800!important;
+}
+.empty{
+  color:#000000!important;
+  text-align:center;
+  padding:28px 5px;
+  font-weight:800!important;
+}
+.back{margin-bottom:10px}
+.back button{
+  background:#ffffff!important;
+  color:#000000!important;
+  border:3px solid #000000!important;
+  border-radius:7px!important;
+  padding:11px 14px!important;
+  font-weight:900!important;
+  font-size:15px!important;
+}
+.dialog{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.75)!important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  z-index:10;
+}
+.dialog-box{
+  max-width:420px;
+  width:100%;
+  background:#ffffff!important;
+  border:3px solid #000000!important;
+  border-radius:8px;
+  padding:18px;
+  color:#000000!important;
+}
+.dialog h2{
+  font-size:21px;
+  margin:0 0 10px;
+  color:#000000!important;
+}
+.dialog p{
+  color:#000000!important;
+  font-size:15px;
+  line-height:1.5;
+  font-weight:700;
+}
+.dialog-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:15px;
+}
+.dialog-actions button{
+  padding:13px;
+  border-radius:7px;
+  border:3px solid #000000!important;
+  background:#ffffff!important;
+  color:#000000!important;
+  font-weight:900;
+  font-size:15px;
+}
+.dialog-actions .danger{
+  background:#d90000!important;
+  color:#ffffff!important;
+  border-color:#000000!important;
+}
+.toast{
+  position:fixed;
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%);
+  background:#000000!important;
+  color:#ffffff!important;
+  padding:12px 17px;
+  border-radius:20px;
+  font-size:15px;
+  font-weight:900;
+  z-index:20;
+  display:none;
+}
+.list-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:10px;
+}
+.list-actions button{
+  background:#ffffff!important;
+  color:#000000!important;
+  border:3px solid #000000!important;
+  border-radius:7px!important;
+  padding:11px!important;
+  font-weight:900!important;
+}
+</style>
+</head>
+<body>
+<div id="app" class="app">
+  <header>
+    <h1>C-log</h1>
+    <div id="clock" class="status"></div>
+  </header>
+  <div id="screen"></div>
+</div>
+<div id="dialog" class="dialog hidden"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+const KEY='clog_qsos_v1', SETTINGS='clog_settings_v1', LISTKEY='clog_lists_v1';
+let qsos=JSON.parse(localStorage.getItem(KEY)||'[]');
+let lists=JSON.parse(localStorage.getItem(LISTKEY)||'[]');
+let settings=JSON.parse(localStorage.getItem(SETTINGS)||JSON.stringify({
+  freq:'145.600', mode:'FM', power:'10', rx:'', tx:'', activeList:null
+}));
+
+function saveAll(){
+  localStorage.setItem(KEY,JSON.stringify(qsos));
+  localStorage.setItem(LISTKEY,JSON.stringify(lists));
+  localStorage.setItem(SETTINGS,JSON.stringify(settings));
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function nowUTC(){
+  return new Date().toISOString().slice(11,16)+' UTC';
+}
+function bandFromFreq(v){
+  let f=parseFloat(String(v).replace(',','.'));
+  if(!isFinite(f)) return '';
+  if(f>=1.8&&f<=2.0)return '160 m';
+  if(f>=3.5&&f<=4.0)return '80 m';
+  if(f>=7.0&&f<=7.3)return '40 m';
+  if(f>=10.1&&f<=10.15)return '30 m';
+  if(f>=14.0&&f<=14.35)return '20 m';
+  if(f>=18.068&&f<=18.168)return '17 m';
+  if(f>=21.0&&f<=21.45)return '15 m';
+  if(f>=24.89&&f<=24.99)return '12 m';
+  if(f>=28.0&&f<=29.7)return '10 m';
+  if(f>=50&&f<=54)return '6 m';
+  if(f>=144&&f<=148)return '2 m';
+  if(f>=420&&f<=450)return '70 cm';
+  if(f>=1240&&f<=1300)return '23 cm';
+  return '';
+}
+function getForm(){
+  return {
+    callsign:document.getElementById('callsign')?.value.trim().toUpperCase()||'',
+    freq:document.getElementById('freq')?.value.trim()||settings.freq,
+    mode:document.getElementById('mode')?.value||settings.mode,
+    power:document.getElementById('power')?.value.trim()||settings.power,
+    rx:document.getElementById('rx')?.value.trim()||'',
+    tx:document.getElementById('tx')?.value.trim()||'',
+    comment:document.getElementById('comment')?.value.trim()||''
+  };
+}
+function updateBand(){
+  const f=document.getElementById('freq')?.value||'';
+  const b=bandFromFreq(f);
+  const el=document.getElementById('band');
+  if(el) el.textContent=b||'—';
+}
+function renderHome(){
+  settings.rx=''; settings.tx='';
+  document.getElementById('screen').innerHTML=`
+    ${settings.activeList?`<div class="active-badges"><span class="badge">● ${esc(settings.activeList)}</span></div>`:''}
+    <div class="card">
+      <div class="row">
+        <div><label>Pasmo</label><div id="band" style="padding:11px 10px;background:#080808;border:1px solid #a28f00;border-radius:7px;font-size:19px;color:#ffe600;font-weight:700">${esc(bandFromFreq(settings.freq)||'—')}</div></div>
+        <div class="freq"><label>Częstotliwość</label><input id="freq" inputmode="decimal" value="${esc(settings.freq)}" oninput="updateBand()"></div>
+      </div>
+      <div style="height:10px"></div>
+      <div class="row">
+        <div><label>Mode</label><select id="mode"><option>AM</option><option>SSB</option><option>DMR</option><option>FM</option><option>C4FM</option><option>CW</option><option>FT8</option><option>FT4</option><option>FM SAT</option></select></div>
+        <div><label>Moc</label><input id="power" inputmode="decimal" value="${esc(settings.power)}" placeholder="10"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>Callsign</label>
+      <input id="callsign" class="call" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="SP3ABC" oninput="callChanged()">
+      <div id="callerInfo" class="small-info">Dane korespondenta pojawią się tutaj.</div>
+    </div>
+
+    <div class="card">
+      <div class="reports">
+        <div class="report">
+          <div class="report-title">RAPORT RX</div>
+          <input id="rx" inputmode="numeric" placeholder="59" onfocus="this.placeholder=''">
+          <div class="quick"><button onclick="quickReport('rx','58')">58</button><button onclick="quickReport('rx','57')">57</button><button onclick="quickReport('rx','55')">55</button></div>
+        </div>
+        <div class="report">
+          <div class="report-title">RAPORT TX</div>
+          <input id="tx" inputmode="numeric" placeholder="59" onfocus="this.placeholder=''">
+          <div class="quick"><button onclick="quickReport('tx','58')">58</button><button onclick="quickReport('tx','57')">57</button><button onclick="quickReport('tx','55')">55</button></div>
+        </div>
+      </div>
+      <div style="height:10px"></div>
+      <label>Komentarz</label>
+      <input id="comment" placeholder="Opcjonalnie">
+    </div>
+
+    <button class="primary" onclick="saveQSO()">ZAPISZ QSO</button>
+
+    <div class="nav">
+      <button onclick="showQSOList()">QSO</button>
+      <button onclick="showSpecial()">☰ FUNKCJE</button>
+      <button onclick="showLists()">LISTY</button>
+    </div>
+  `;
+  const mode=document.getElementById('mode');
+  mode.value=settings.mode;
+  updateBand();
+}
+function quickReport(id,v){document.getElementById(id).value=v;}
+let lastCall='';
+function callChanged(){
+  const el=document.getElementById('callsign');
+  el.value=el.value.toUpperCase();
+  const c=el.value.trim();
+  const info=document.getElementById('callerInfo');
+  if(!c){info.textContent='Dane korespondenta pojawią się tutaj.';return;}
+  const old=qsos.find(q=>q.callsign===c);
+  if(old) info.innerHTML=`⚠️ ${esc(c)} był już zapisany: ${esc(old.band)} • ${esc(old.mode)} • ${esc(old.time)}`;
+  else info.textContent='Lookup QRZ: gotowy do integracji. QSO można zapisać także offline.';
+}
+function saveQSO(){
+  const f=getForm();
+  if(!f.callsign){toast('Wpisz callsign.');return;}
+  if(!f.rx)f.rx='59';
+  if(!f.tx)f.tx='59';
+  const band=bandFromFreq(f.freq)||'Nieznane';
+  const dup=qsos.find(q=>q.callsign===f.callsign && q.band===band && q.listId===(settings.activeList||null));
+  if(dup){
+    showDuplicate(f,band,dup);
+    return;
+  }
+  actuallySave(f,band);
+}
+function actuallySave(f,band){
+  const t=new Date();
+  const q={
+    id:Date.now(),callsign:f.callsign,freq:f.freq,band,mode:f.mode,power:f.power,
+    rx:f.rx,tx:f.tx,comment:f.comment,time:t.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'}),
+    date:t.toLocaleDateString('pl-PL'),utc:t.toISOString(),listId:settings.activeList||null
+  };
+  qsos.unshift(q);
+  settings.freq=f.freq;settings.mode=f.mode;settings.power=f.power;
+  saveAll();
+  toast('✓ QSO ZAPISANE');
+  setTimeout(()=>renderHome(),500);
+}
+function showDuplicate(f,band,dup){
+  const d=document.getElementById('dialog');
+  d.classList.remove('hidden');
+  d.innerHTML=`<div class="dialog-box">
+    <h2>⚠️ DUPLIKAT</h2>
+    <p><b>${esc(f.callsign)}</b> jest już zapisany w tym logu na paśmie <b>${esc(band)}</b>.</p>
+    <p>Poprzednie QSO: ${esc(dup.date)} ${esc(dup.time)} • ${esc(dup.freq)} MHz • ${esc(dup.mode)} • ${esc(dup.rx)}/${esc(dup.tx)}</p>
+    <p>Czy zapisać ponownie?</p>
+    <div class="dialog-actions"><button onclick="closeDialog()">NIE</button><button class="danger" onclick='duplicateNow(${JSON.stringify(f)},${JSON.stringify(band)})'>TAK, ZDUPLIKUJ</button></div>
+  </div>`;
+}
+function duplicateNow(f,band){closeDialog();actuallySave(f,band);}
+function closeDialog(){document.getElementById('dialog').classList.add('hidden');}
+function showQSOList(){
+  document.getElementById('screen').innerHTML=`
+  <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
+  <div class="card"><h2 class="section">LISTA QSO</h2><input id="search" placeholder="🔍 Szukaj callsign / pasmo" oninput="renderItems()"></div>
+  <div id="items"></div>`;
+  renderItems();
+}
+function renderItems(){
+  const s=(document.getElementById('search')?.value||'').toUpperCase();
+  const arr=qsos.filter(q=>(q.callsign+' '+q.band+' '+q.mode).toUpperCase().includes(s));
+  const box=document.getElementById('items');
+  if(!arr.length){box.innerHTML='<div class="empty">Brak zapisanych QSO.</div>';return;}
+  box.innerHTML=arr.map(q=>`<div class="list-item" onclick="editQSO(${q.id})">
+    <div class="list-main"><span class="call-list">${esc(q.callsign)}</span><span>${esc(q.time)}</span></div>
+    <div class="meta">${esc(q.band)} • ${esc(q.freq)} • ${esc(q.mode)} • RX ${esc(q.rx)} / TX ${esc(q.tx)}</div>
+    ${q.listId?`<div class="meta">Lista: ${esc(q.listId)}</div>`:''}
+  </div>`).join('');
+}
+function editQSO(id){
+  const q=qsos.find(x=>x.id===id); if(!q)return;
+  document.getElementById('screen').innerHTML=`
+  <div class="back"><button onclick="showQSOList()">← QSO</button></div>
+  <div class="card"><h2 class="section">${esc(q.callsign)}</h2>
+  <div class="small-info">${esc(q.date)} • ${esc(q.time)} • ${esc(q.band)} • ${esc(q.freq)} • ${esc(q.mode)}</div>
+  <p>RX: <b>${esc(q.rx)}</b> &nbsp; TX: <b>${esc(q.tx)}</b></p>
+  <p>Moc: <b>${esc(q.power)} W</b></p>
+  <p>${esc(q.comment||'Brak komentarza')}</p></div>
+  <div class="list-actions"><button onclick="deleteQSO(${q.id})">Usuń QSO</button><button onclick="renderHome()">LOGUJ</button></div>`;
+}
+function deleteQSO(id){qsos=qsos.filter(q=>q.id!==id);saveAll();toast('QSO usunięte');setTimeout(showQSOList,300);}
+function showSpecial(){
+  const active=(type)=>lists.find(l=>l.id===settings.activeList && l.type===type);
+  document.getElementById('screen').innerHTML=`
+  <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
+  <div class="card"><h2 class="section">FUNKCJE SPECJALNE</h2>
+  <div class="special-grid">
+    <button class="${active('SAT')?'on':''}" onclick="newList('SAT')">🛰 SAT / ISS</button>
+    <button class="${active('POTA')?'on':''}" onclick="newList('POTA')">🌲 POTA</button>
+    <button class="${active('SOTA')?'on':''}" onclick="newList('SOTA')">⛰ SOTA</button>
+    <button class="${active('IOTA')?'on':''}" onclick="newList('IOTA')">🌊 IOTA</button>
+    <button class="${active('LLOTA')?'on':''}" onclick="newList('LLOTA')">🏝 LLOTA</button>
+    <button class="${active('WWFF')?'on':''}" onclick="newList('WWFF')">🌳 WWFF</button>
+    <button onclick="showLists()">📋 LISTY</button>
+  </div></div>
+  <div class="card">
+    <div class="small-info">Aktywna lista: ${settings.activeList?'<b>'+esc(settings.activeList)+'</b>':'brak'}</div>
+    <div style="margin-top:10px;padding:10px;background:#ffe600;border:2px solid #111;border-radius:7px;color:#111;font-weight:800;text-align:center">☀ TRYB SŁOŃCE — aktywny</div>
+  </div>`;
+}
+function newList(type){
+  const name=prompt('Nazwa nowej listy (np. PL-XXXX):','PL-XXXX');
+  if(!name)return;
+  const loc=prompt('Lokalizacja / locator stacji (np. JO82XX). W wersji APK pobierzemy GPS automatycznie:','');
+  const id=Date.now();
+  lists.unshift({id,name,type,location:loc||'Nie podano',start:new Date().toISOString(),status:'AKTYWNA'});
+  settings.activeList=name;saveAll();toast('Lista '+name+' aktywna');setTimeout(renderHome,400);
+}
+function showLists(){
+  document.getElementById('screen').innerHTML=`
+  <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
+  <div class="card"><h2 class="section">LISTY AKTYWACJI</h2>
+  ${lists.length?lists.map(l=>`<div class="list-item">
+    <div class="list-main"><b>${esc(l.name)}</b><span>${esc(l.type)}</span></div>
+    <div class="meta">📍 ${esc(l.location)} • ${esc(l.status)}</div>
+    <div class="meta">QSO: ${qsos.filter(q=>q.listId===l.name).length}</div>
+    <div class="list-actions"><button onclick="activateList('${String(l.name).replace(/'/g,"\\'")}')">AKTYWUJ</button><button onclick="finishList(${l.id})">ZAKOŃCZ</button></div>
+  </div>`).join(''):'<div class="empty">Brak list aktywacji.</div>'}
+  </div>`;
+}
+function activateList(name){settings.activeList=name;saveAll();toast('Aktywna: '+name);setTimeout(renderHome,400);}
+function finishList(id){
+  const l=lists.find(x=>x.id===id);if(!l)return;
+  l.status='ZAKOŃCZONA';if(settings.activeList===l.name)settings.activeList=null;saveAll();showLists();
+}
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800);}
+setInterval(()=>{document.getElementById('clock').textContent=nowUTC()},1000);
+renderHome();
+</script>
+</body>
+</html>
