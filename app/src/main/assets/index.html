@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#000000">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>C-log v0.3</title>
+<title>C-log v0.5</title>
 <style>
 :root{--bg:#000;--surface:#080808;--surface2:#111;--text:#fff;--muted:#bdbdbd;--line:#777;--accent:#ff2020;--accentText:#fff;--field:#050505;--danger:#ff3030}
 html[data-theme="light"]{--bg:#fff;--surface:#fff;--surface2:#f3f3f3;--text:#111;--muted:#555;--line:#777;--accent:#e51b23;--accentText:#fff;--field:#fff;--danger:#c9151c}
@@ -62,6 +62,17 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(25
 .theme-note{color:var(--muted);font-size:13px;margin-top:8px;line-height:1.4}
 @media(max-width:370px){.app{padding-left:8px;padding-right:8px}.top-tabs{gap:3px}.navtab{font-size:12px}h1{font-size:27px}}
 </style>
+
+<script>
+window.addEventListener('error', function(e){
+  var el=document.getElementById('jsError');
+  if(el){
+    el.textContent='Błąd aplikacji: '+(e.message||'JavaScript');
+    el.style.display='block';
+  }
+  console.error(e.message||e.error);
+});
+</script>
 </head>
 <body>
 <div id="app" class="app">
@@ -71,7 +82,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(25
     <button class="header-btn" onclick="showSettings()" aria-label="Ustawienia">⚙</button>
     <div id="clock" class="status"></div>
   </header>
-  <div id="screen"></div>
+  <div id="jsError" style="display:none;margin:0 0 10px;padding:10px;border:2px solid #ff2020;border-radius:8px;color:#ff2020;font-weight:700;background:#080808"></div><div id="screen"></div>
 </div>
 <div id="dialog" class="dialog hidden"></div>
 <div id="toast" class="toast"></div>

@@ -11,3 +11,7 @@ Domyślny motyw to czarne tło i biała czcionka. W Ustawieniach można przełą
 ## UI v0.4
 
 Dodano zaakceptowaną zieloną ikonę aplikacji z napisem C-log. Ikona jest ustawiona jako ikona aplikacji Android.
+
+## v0.5
+
+Poprawiono ustawienie ikony aplikacji i wzmocniono uruchamianie JavaScript w WebView. Dodano diagnostykę błędów JavaScript.
