@@ -1,4 +1,4 @@
-name: Build C-log APK
+name: Build and Release C-log APK
 
 on:
   workflow_dispatch:
@@ -6,6 +6,11 @@ on:
     branches:
       - main
       - master
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -25,19 +30,49 @@ jobs:
         uses: android-actions/setup-android@v4
 
       - name: Zainstaluj Android SDK 36
-        run: |
-          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Ustaw Gradle 9.5
+      - name: Ustaw Gradle 9.5.1
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.5.1'
 
-      - name: Zbuduj APK
+      - name: Odtwórz klucz podpisujący
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          KEYSTORE_B64: ${{ secrets.CLOG_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/clog-release.jks"
+
+      - name: Zbuduj debug APK
+        if: "!startsWith(github.ref, 'refs/tags/v')"
         run: gradle assembleDebug --stacktrace
 
-      - name: Udostępnij APK
+      - name: Zbuduj podpisany release APK
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          CLOG_KEYSTORE_PATH: ${{ runner.temp }}/clog-release.jks
+          CLOG_KEYSTORE_PASSWORD: ${{ secrets.CLOG_KEYSTORE_PASSWORD }}
+          CLOG_KEY_ALIAS: ${{ secrets.CLOG_KEY_ALIAS }}
+          CLOG_KEY_PASSWORD: ${{ secrets.CLOG_KEY_PASSWORD }}
+        run: gradle assembleRelease --stacktrace
+
+      - name: Udostępnij debug APK
+        if: "!startsWith(github.ref, 'refs/tags/v')"
         uses: actions/upload-artifact@v4
         with:
           name: C-log-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Przygotuj release APK
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: cp app/build/outputs/apk/release/app-release.apk C-log.apk
+
+      - name: Utwórz GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" C-log.apk \
+            --title "C-log $GITHUB_REF_NAME" \
+            --generate-notes
