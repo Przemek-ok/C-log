@@ -1,333 +1,74 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta name="color-scheme" content="light">
-<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#000000">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>C-log v0.5 — MAX CONTRAST</title>
+<title>C-log v0.3</title>
 <style>
-:root{
-  color-scheme:light!important;
-  background:#ffffff!important;
-  --bg:#ffffff;
-  --fg:#000000;
-  --line:#000000;
-  --accent:#ffd800;
-  --danger:#d90000;
-}
-html,body{
-  margin:0!important;
-  padding:0!important;
-  background:#ffffff!important;
-  color:#000000!important;
-  opacity:1!important;
-  filter:none!important;
-  -webkit-filter:none!important;
-  font-family:Arial,sans-serif!important;
-  min-height:100vh;
-}
-*{
-  box-sizing:border-box!important;
-  opacity:1!important;
-  filter:none!important;
-  -webkit-filter:none!important;
-  text-shadow:none!important;
-}
-.app{
-  max-width:520px;
-  margin:auto;
-  min-height:100vh;
-  padding:10px 10px 20px;
-  background:#ffffff!important;
-  color:#000000!important;
-}
-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:10px;
-  background:#ffffff!important;
-}
-h1{
-  font-size:27px!important;
-  margin:0!important;
-  color:#000000!important;
-  font-weight:900!important;
-}
-.status{
-  font-size:14px!important;
-  color:#000000!important;
-  font-weight:900!important;
-}
-.card{
-  background:#ffffff!important;
-  color:#000000!important;
-  border:3px solid #000000!important;
-  border-radius:8px!important;
-  padding:12px!important;
-  margin-bottom:10px!important;
-  box-shadow:none!important;
-}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-label{
-  display:block!important;
-  font-size:13px!important;
-  color:#000000!important;
-  margin:0 0 5px 2px!important;
-  font-weight:900!important;
-}
-input,select{
-  width:100%!important;
-  background:#ffffff!important;
-  color:#000000!important;
-  border:3px solid #000000!important;
-  border-radius:6px!important;
-  padding:12px 10px!important;
-  outline:none!important;
-  font-weight:900!important;
-  -webkit-text-fill-color:#000000!important;
-}
-input::placeholder{
-  color:#444444!important;
-  opacity:1!important;
-  -webkit-text-fill-color:#444444!important;
-}
-input:focus,select:focus{
-  border-color:#000000!important;
-  box-shadow:0 0 0 3px #ffd800!important;
-}
-.call{
-  font-size:28px!important;
-  letter-spacing:1px!important;
-  text-transform:uppercase!important;
-  font-weight:900!important;
-}
-.small-info{
-  font-size:15px!important;
-  color:#000000!important;
-  min-height:20px;
-  margin-top:7px;
-  font-weight:800!important;
-}
-.freq input{
-  font-size:22px!important;
-  font-weight:900!important;
-}
-#band{
-  background:#ffd800!important;
-  color:#000000!important;
-  border:3px solid #000000!important;
-  font-size:21px!important;
-  font-weight:900!important;
-}
-.reports{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-.report-title{
-  font-size:14px!important;
-  color:#000000!important;
-  text-align:center;
-  margin-bottom:6px;
-  font-weight:900!important;
-}
-.report input{
-  text-align:center!important;
-  font-size:34px!important;
-  font-weight:900!important;
-  padding:10px!important;
-  background:#ffffff!important;
-  color:#000000!important;
-  border:3px solid #000000!important;
-  -webkit-text-fill-color:#000000!important;
-}
-.quick{
-  display:flex;
-  gap:5px;
-  margin-top:6px;
-}
-.quick button{
-  flex:1;
-  background:#ffffff!important;
-  color:#000000!important;
-  border:3px solid #000000!important;
-  border-radius:6px!important;
-  padding:9px 3px!important;
-  font-weight:900!important;
-  font-size:18px!important;
-}
-.primary{
-  width:100%!important;
-  background:#d90000!important;
-  color:#ffffff!important;
-  border:3px solid #000000!important;
-  border-radius:8px!important;
-  padding:16px!important;
-  font-size:20px!important;
-  font-weight:900!important;
-}
-.nav{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  gap:7px;
-  margin-top:10px;
-}
-.nav button,.special button{
-  background:#ffffff!important;
-  color:#000000!important;
-  border:3px solid #000000!important;
-  border-radius:7px!important;
-  padding:13px 5px!important;
-  font-weight:900!important;
-  font-size:15px!important;
-}
-.special-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:7px;
-}
-.special button.on{
-  border-color:#000000!important;
-  background:#ffd800!important;
-  color:#000000!important;
-}
-.active-badges{
-  display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-  margin-bottom:8px;
-}
-.badge{
-  background:#ffd800!important;
-  border:3px solid #000000!important;
-  color:#000000!important;
-  border-radius:15px!important;
-  padding:6px 10px!important;
-  font-size:13px!important;
-  font-weight:900!important;
-}
-.list-item{
-  background:#ffffff!important;
-  color:#000000!important;
-  border:3px solid #000000!important;
-  border-radius:7px!important;
-  padding:10px!important;
-  margin-bottom:7px!important;
-}
-.list-main{display:flex;justify-content:space-between;gap:8px}
-.call-list{
-  font-weight:900!important;
-  color:#000000!important;
-  font-size:17px!important;
-}
-.meta{
-  color:#000000!important;
-  font-size:14px!important;
-  margin-top:4px;
-  font-weight:800!important;
-}
-.empty{
-  color:#000000!important;
-  text-align:center;
-  padding:28px 5px;
-  font-weight:800!important;
-}
+:root{--bg:#000;--surface:#080808;--surface2:#111;--text:#fff;--muted:#bdbdbd;--line:#777;--accent:#ff2020;--accentText:#fff;--field:#050505;--danger:#ff3030}
+html[data-theme="light"]{--bg:#fff;--surface:#fff;--surface2:#f3f3f3;--text:#111;--muted:#555;--line:#777;--accent:#e51b23;--accentText:#fff;--field:#fff;--danger:#c9151c}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+body{font-size:16px}
+button,input,select{font:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app{width:100%;max-width:520px;min-height:100vh;margin:auto;padding:10px 12px 24px;background:var(--bg);color:var(--text)}
+header{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:6px;margin-bottom:10px}
+.brand{text-align:center} h1{margin:0;font-size:30px;line-height:1;font-weight:800;letter-spacing:-.5px}
+.brand-sub{margin-top:3px;color:var(--muted);font-size:11px;letter-spacing:.8px}
+.header-btn{width:40px;height:40px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);font-size:22px}
+.header-btn:active,.navtab:active,button:active{transform:scale(.98)}
+.status{position:absolute;left:-9999px}
+.top-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:12px}
+.navtab{min-height:42px;border:2px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);font-weight:700;font-size:14px}
+.navtab.active{border-color:var(--accent);color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:12px;margin-bottom:10px}
+.section{margin:0 0 10px;font-size:22px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+label{display:block;margin:0 0 5px 2px;color:var(--text);font-size:13px;font-weight:600}
+input,select{width:100%;min-height:46px;padding:10px 11px;border:1px solid var(--line);border-radius:8px;outline:none;background:var(--field);color:var(--text);-webkit-text-fill-color:var(--text)}
+input::placeholder{color:var(--muted);opacity:1;-webkit-text-fill-color:var(--muted)}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(255,32,32,.18)}
+.call{font-size:25px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.freq input{font-size:20px;font-weight:700}
+.band-value{min-height:46px;display:flex;align-items:center;padding:10px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--text);font-size:18px;font-weight:700}
+.small-info{min-height:20px;margin-top:7px;color:var(--muted);font-size:13px}
+.reports{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.report-title{margin-bottom:5px;text-align:center;color:var(--muted);font-size:12px;font-weight:700}
+.report input{text-align:center;font-size:30px;font-weight:700}
+.quick{display:flex;gap:4px;margin-top:5px}
+.quick button{flex:1;min-height:36px;padding:5px 2px;border:1px solid var(--line);border-radius:7px;background:var(--surface2);color:var(--text);font-weight:700}
+.primary{width:100%;min-height:54px;border:1px solid var(--accent);border-radius:9px;background:var(--accent);color:var(--accentText);font-size:18px;font-weight:800}
+.nav{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px}
+.nav button,.special button,.list-actions button,.back button{min-height:44px;padding:9px 7px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-weight:700}
+.special-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.special button.on{border-color:var(--accent);color:var(--accent)}
+.active-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.badge{border:1px solid var(--accent);border-radius:14px;padding:5px 9px;background:var(--surface);color:var(--accent);font-size:12px;font-weight:700}
+.list-item{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:7px}
+.list-main{display:flex;justify-content:space-between;gap:8px}.call-list{font-size:17px;font-weight:800}
+.meta{margin-top:4px;color:var(--muted);font-size:13px}.empty{padding:28px 5px;text-align:center;color:var(--muted)}
 .back{margin-bottom:10px}
-.back button{
-  background:#ffffff!important;
-  color:#000000!important;
-  border:3px solid #000000!important;
-  border-radius:7px!important;
-  padding:11px 14px!important;
-  font-weight:900!important;
-  font-size:15px!important;
-}
-.dialog{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.75)!important;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:18px;
-  z-index:10;
-}
-.dialog-box{
-  max-width:420px;
-  width:100%;
-  background:#ffffff!important;
-  border:3px solid #000000!important;
-  border-radius:8px;
-  padding:18px;
-  color:#000000!important;
-}
-.dialog h2{
-  font-size:21px;
-  margin:0 0 10px;
-  color:#000000!important;
-}
-.dialog p{
-  color:#000000!important;
-  font-size:15px;
-  line-height:1.5;
-  font-weight:700;
-}
-.dialog-actions{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-  margin-top:15px;
-}
-.dialog-actions button{
-  padding:13px;
-  border-radius:7px;
-  border:3px solid #000000!important;
-  background:#ffffff!important;
-  color:#000000!important;
-  font-weight:900;
-  font-size:15px;
-}
-.dialog-actions .danger{
-  background:#d90000!important;
-  color:#ffffff!important;
-  border-color:#000000!important;
-}
-.toast{
-  position:fixed;
-  left:50%;
-  bottom:18px;
-  transform:translateX(-50%);
-  background:#000000!important;
-  color:#ffffff!important;
-  padding:12px 17px;
-  border-radius:20px;
-  font-size:15px;
-  font-weight:900;
-  z-index:20;
-  display:none;
-}
-.list-actions{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-  margin-top:10px;
-}
-.list-actions button{
-  background:#ffffff!important;
-  color:#000000!important;
-  border:3px solid #000000!important;
-  border-radius:7px!important;
-  padding:11px!important;
-  font-weight:900!important;
-}
+.dialog{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);z-index:10}
+.dialog-box{width:100%;max-width:420px;padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text)}
+.dialog h2{margin:0 0 10px;font-size:21px}.dialog p{color:var(--muted);font-size:15px;line-height:1.45}
+.dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}
+.dialog-actions button{min-height:46px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--text);font-weight:700}
+.dialog-actions .danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);padding:11px 16px;border-radius:18px;background:#fff;color:#000;font-size:14px;font-weight:700;z-index:20;display:none}
+.list-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.theme-note{color:var(--muted);font-size:13px;margin-top:8px;line-height:1.4}
+@media(max-width:370px){.app{padding-left:8px;padding-right:8px}.top-tabs{gap:3px}.navtab{font-size:12px}h1{font-size:27px}}
 </style>
 </head>
 <body>
 <div id="app" class="app">
   <header>
-    <h1>C-log</h1>
+    <button class="header-btn" onclick="showSpecial()" aria-label="Menu">☰</button>
+    <div class="brand"><h1>C-log</h1><div class="brand-sub">by SQ3TOM</div></div>
+    <button class="header-btn" onclick="showSettings()" aria-label="Ustawienia">⚙</button>
     <div id="clock" class="status"></div>
   </header>
   <div id="screen"></div>
@@ -340,9 +81,42 @@ const KEY='clog_qsos_v1', SETTINGS='clog_settings_v1', LISTKEY='clog_lists_v1';
 let qsos=JSON.parse(localStorage.getItem(KEY)||'[]');
 let lists=JSON.parse(localStorage.getItem(LISTKEY)||'[]');
 let settings=JSON.parse(localStorage.getItem(SETTINGS)||JSON.stringify({
-  freq:'145.600', mode:'FM', power:'10', rx:'', tx:'', activeList:null
+  freq:'145.600', mode:'FM', power:'10', rx:'', tx:'', activeList:null, theme:'dark'
 }));
 
+
+function applyTheme(){
+  const theme=settings.theme||'dark';
+  document.documentElement.setAttribute('data-theme',theme);
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute('content',theme==='dark'?'#000000':'#ffffff');
+}
+function showSettings(){
+  document.getElementById('screen').innerHTML=`
+    <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
+    <div class="card">
+      <h2 class="section">USTAWIENIA</h2>
+      <div class="list-item">
+        <b>WYGLĄD</b>
+        <div class="theme-note">Domyślnie: czarne tło i biała czcionka. Wybierz wygląd aplikacji.</div>
+        <div class="list-actions">
+          <button onclick="setTheme('dark')">● CZARNE</button>
+          <button onclick="setTheme('light')">○ BIAŁE</button>
+        </div>
+      </div>
+      <div class="list-item">
+        <b>AKTUALNY MOTYW</b>
+        <div class="meta">${settings.theme==='dark'?'Czarne tło / biała czcionka':'Białe tło / czarna czcionka'}</div>
+      </div>
+    </div>`;
+}
+function setTheme(theme){
+  settings.theme=theme;
+  saveAll();
+  applyTheme();
+  showSettings();
+  toast(theme==='dark'?'Czarne tło':'Białe tło');
+}
 function saveAll(){
   localStorage.setItem(KEY,JSON.stringify(qsos));
   localStorage.setItem(LISTKEY,JSON.stringify(lists));
@@ -390,10 +164,17 @@ function updateBand(){
 function renderHome(){
   settings.rx=''; settings.tx='';
   document.getElementById('screen').innerHTML=`
+    <div class="top-tabs">
+      <button class="navtab active" onclick="renderHome()">QSO</button>
+      <button class="navtab" onclick="newList('POTA')">POTA</button>
+      <button class="navtab" onclick="newList('SOTA')">SOTA</button>
+      <button class="navtab" onclick="newList('IOTA')">IOTA</button>
+      <button class="navtab" onclick="newList('SAT')">SAT</button>
+    </div>
     ${settings.activeList?`<div class="active-badges"><span class="badge">● ${esc(settings.activeList)}</span></div>`:''}
     <div class="card">
       <div class="row">
-        <div><label>Pasmo</label><div id="band" style="padding:11px 10px;background:#080808;border:1px solid #a28f00;border-radius:7px;font-size:19px;color:#ffe600;font-weight:700">${esc(bandFromFreq(settings.freq)||'—')}</div></div>
+        <div><label>Pasmo</label><div id="band" class="band-value">${esc(bandFromFreq(settings.freq)||'—')}</div></div>
         <div class="freq"><label>Częstotliwość</label><input id="freq" inputmode="decimal" value="${esc(settings.freq)}" oninput="updateBand()"></div>
       </div>
       <div style="height:10px"></div>
@@ -536,7 +317,7 @@ function showSpecial(){
   </div></div>
   <div class="card">
     <div class="small-info">Aktywna lista: ${settings.activeList?'<b>'+esc(settings.activeList)+'</b>':'brak'}</div>
-    <div style="margin-top:10px;padding:10px;background:#ffe600;border:2px solid #111;border-radius:7px;color:#111;font-weight:800;text-align:center">☀ TRYB SŁOŃCE — aktywny</div>
+    <div class="theme-note">C-log działa offline. QRZ/GPS dołączymy w kolejnych wersjach.</div>
   </div>`;
 }
 function newList(type){
@@ -565,6 +346,7 @@ function finishList(id){
   l.status='ZAKOŃCZONA';if(settings.activeList===l.name)settings.activeList=null;saveAll();showLists();
 }
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800);}
+applyTheme();
 setInterval(()=>{document.getElementById('clock').textContent=nowUTC()},1000);
 renderHome();
 </script>
