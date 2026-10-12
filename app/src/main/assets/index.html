@@ -62,6 +62,10 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(25
 .sat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.sat-value{font-size:20px;font-weight:700}.sat-note{font-size:13px;color:var(--muted);line-height:1.45;margin-top:8px}
 @media(max-width:370px){.app{padding-left:8px;padding-right:8px}.top-tabs{gap:3px}.navtab{font-size:12px}h1{font-size:27px}}
 </style>
+  <style>
+.navtab { display: none !important; }
+body { padding-bottom: 24px !important; }
+</style>
 
 <script>
 window.addEventListener('error', function(e){
@@ -189,13 +193,7 @@ function updateBand(){
 function renderHome(){
   settings.rx=''; settings.tx='';
   document.getElementById('screen').innerHTML=`
-    <div class="top-tabs">
-      <button class="navtab active" onclick="renderHome()">QSO</button>
-      <button class="navtab" onclick="newList('POTA')">POTA</button>
-      <button class="navtab" onclick="newList('SOTA')">SOTA</button>
-      <button class="navtab" onclick="newList('IOTA')">IOTA</button>
-      <button class="navtab" onclick="showSatSplit()">SAT</button>
-    </div>
+    
     ${settings.activeList?`<div class="active-badges"><span class="badge">● ${esc(settings.activeList)}</span></div>`:''}
     <div class="card">
       <div class="row">
