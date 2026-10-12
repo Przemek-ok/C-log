@@ -4,17 +4,17 @@
 <meta name="color-scheme" content="dark light">
 <meta name="theme-color" content="#000000">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>C-log v0.7</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>C-log v0.8</title>
 <style>
 :root{--bg:#000;--surface:#080808;--surface2:#111;--text:#fff;--muted:#bdbdbd;--line:#777;--accent:#ff2020;--accentText:#fff;--field:#050505;--danger:#ff3030}
 html[data-theme="light"]{--bg:#fff;--surface:#fff;--surface2:#f3f3f3;--text:#111;--muted:#555;--line:#777;--accent:#e51b23;--accentText:#fff;--field:#fff;--danger:#c9151c}
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+html,body{margin:0;padding:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif} body{min-height:100vh;min-height:100dvh;padding-bottom:env(safe-area-inset-bottom, 0px)}
 body{font-size:16px}
 button,input,select{font:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
-.app{width:100%;max-width:520px;min-height:100vh;margin:auto;padding:10px 12px 24px;background:var(--bg);color:var(--text)}
+.app{width:100%;max-width:520px;min-height:100vh;min-height:100dvh;margin:auto;padding:10px 12px calc(28px + env(safe-area-inset-bottom, 0px));background:var(--bg);color:var(--text)}
 header{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:6px;margin-bottom:10px}
 .brand{text-align:center} h1{margin:0;font-size:30px;line-height:1;font-weight:800;letter-spacing:-.5px}
 .brand-sub{margin-top:3px;color:var(--muted);font-size:11px;letter-spacing:.8px}
@@ -41,8 +41,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(25
 .quick{display:flex;gap:4px;margin-top:5px}
 .quick button{flex:1;min-height:36px;padding:5px 2px;border:1px solid var(--line);border-radius:7px;background:var(--surface2);color:var(--text);font-weight:700}
 .primary{width:100%;min-height:54px;border:1px solid var(--accent);border-radius:9px;background:var(--accent);color:var(--accentText);font-size:18px;font-weight:800}
-.nav{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px}
-.nav button,.special button,.list-actions button,.back button{min-height:44px;padding:9px 7px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-weight:700}
+.special button,.list-actions button,.back button{min-height:44px;padding:9px 7px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-weight:700}
 .special-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .special button.on{border-color:var(--accent);color:var(--accent)}
 .active-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
@@ -60,6 +59,7 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(25
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);padding:11px 16px;border-radius:18px;background:#fff;color:#000;font-size:14px;font-weight:700;z-index:20;display:none}
 .list-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
 .theme-note{color:var(--muted);font-size:13px;margin-top:8px;line-height:1.4}
+.sat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.sat-value{font-size:20px;font-weight:700}.sat-note{font-size:13px;color:var(--muted);line-height:1.45;margin-top:8px}
 @media(max-width:370px){.app{padding-left:8px;padding-right:8px}.top-tabs{gap:3px}.navtab{font-size:12px}h1{font-size:27px}}
 </style>
 
@@ -194,7 +194,7 @@ function renderHome(){
       <button class="navtab" onclick="newList('POTA')">POTA</button>
       <button class="navtab" onclick="newList('SOTA')">SOTA</button>
       <button class="navtab" onclick="newList('IOTA')">IOTA</button>
-      <button class="navtab" onclick="newList('SAT')">SAT</button>
+      <button class="navtab" onclick="showSatSplit()">SAT</button>
     </div>
     ${settings.activeList?`<div class="active-badges"><span class="badge">● ${esc(settings.activeList)}</span></div>`:''}
     <div class="card">
@@ -204,7 +204,7 @@ function renderHome(){
       </div>
       <div style="height:10px"></div>
       <div class="row">
-        <div><label>Mode</label><select id="mode"><option>AM</option><option>SSB</option><option>DMR</option><option>FM</option><option>C4FM</option><option>CW</option><option>FT8</option><option>FT4</option><option>FM SAT</option></select></div>
+        <div><label>Mode</label><select id="mode" onchange="if(this.value!=='FM SAT')settings.satMode=false"><option>AM</option><option>SSB</option><option>DMR</option><option>FM</option><option>C4FM</option><option>CW</option><option>FT8</option><option>FT4</option><option>FM SAT</option></select></div>
         <div><label>Moc</label><input id="power" inputmode="decimal" value="${esc(settings.power)}" placeholder="10"></div>
       </div>
     </div>
@@ -235,11 +235,6 @@ function renderHome(){
 
     <button class="primary" onclick="saveQSO()">ZAPISZ QSO</button>
 
-    <div class="nav">
-      <button onclick="showQSOList()">QSO</button>
-      <button onclick="showSpecial()">☰ FUNKCJE</button>
-      <button onclick="showLists()">LISTY</button>
-    </div>
   `;
   const mode=document.getElementById('mode');
   mode.value=settings.mode;
@@ -274,7 +269,7 @@ function actuallySave(f,band){
   const t=new Date();
   const q={
     id:Date.now(),callsign:f.callsign,freq:f.freq,band,mode:f.mode,power:f.power,
-    rx:f.rx,tx:f.tx,comment:f.comment,time:t.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'}),
+    rx:f.rx,tx:f.tx,comment:f.comment,satUplink:settings.satMode?settings.satUplink:null,satDownlink:settings.satMode?settings.satDownlink:null,time:t.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'}),
     date:t.toLocaleDateString('pl-PL'),utc:t.toISOString(),listId:settings.activeList||null
   };
   qsos.unshift(q);
@@ -311,6 +306,7 @@ function renderItems(){
   box.innerHTML=arr.map(q=>`<div class="list-item" onclick="editQSO(${q.id})">
     <div class="list-main"><span class="call-list">${esc(q.callsign)}</span><span>${esc(q.time)}</span></div>
     <div class="meta">${esc(q.band)} • ${esc(q.freq)} • ${esc(q.mode)} • RX ${esc(q.rx)} / TX ${esc(q.tx)}</div>
+    ${q.satUplink&&q.satDownlink?`<div class="meta">SAT split TX ${esc(q.satUplink)} / RX ${esc(q.satDownlink)} MHz</div>`:''}
     ${q.listId?`<div class="meta">Lista: ${esc(q.listId)}</div>`:''}
   </div>`).join('');
 }
@@ -322,17 +318,52 @@ function editQSO(id){
   <div class="small-info">${esc(q.date)} • ${esc(q.time)} • ${esc(q.band)} • ${esc(q.freq)} • ${esc(q.mode)}</div>
   <p>RX: <b>${esc(q.rx)}</b> &nbsp; TX: <b>${esc(q.tx)}</b></p>
   <p>Moc: <b>${esc(q.power)} W</b></p>
+   ${q.satUplink&&q.satDownlink?`<p>SAT split — TX / uplink: <b>${esc(q.satUplink)} MHz</b>; RX / downlink: <b>${esc(q.satDownlink)} MHz</b></p>`:'' }
   <p>${esc(q.comment||'Brak komentarza')}</p></div>
   <div class="list-actions"><button onclick="deleteQSO(${q.id})">Usuń QSO</button><button onclick="renderHome()">LOGUJ</button></div>`;
 }
 function deleteQSO(id){qsos=qsos.filter(q=>q.id!==id);saveAll();toast('QSO usunięte');setTimeout(showQSOList,300);}
+function showSatSplit(){
+  const up=settings.satUplink||'145.990';
+  const down=settings.satDownlink||'437.800';
+  document.getElementById('screen').innerHTML=`
+    <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
+    <div class="card">
+      <h2 class="section">SAT / ISS — SPLIT</h2>
+      <div class="sat-note">Ustaw osobno częstotliwość nadawania (uplink) i odbioru (downlink). Wartości początkowe są przykładowymi częstotliwościami przemiennika ISS; sprawdź aktualne ustawienia satelity przed łącznością.</div>
+      <div class="sat-grid">
+        <div><label>TX / UPLINK (MHz)</label><input id="satUplink" class="sat-value" inputmode="decimal" value="${esc(up)}"></div>
+        <div><label>RX / DOWNLINK (MHz)</label><input id="satDownlink" class="sat-value" inputmode="decimal" value="${esc(down)}"></div>
+      </div>
+      <div style="height:12px"></div>
+      <label>Tryb</label><div class="band-value">FM SAT</div>
+      <div class="list-actions">
+        <button onclick="applySatSplit()">ZASTOSUJ SPLIT</button>
+        <button onclick="renderHome()">ANULUJ</button>
+      </div>
+    </div>`;
+}
+function applySatSplit(){
+  const up=(document.getElementById('satUplink')?.value||'').trim();
+  const down=(document.getElementById('satDownlink')?.value||'').trim();
+  const valid=v=>{const n=parseFloat(v.replace(',','.'));return v!==''&&Number.isFinite(n)&&n>0;};
+  if(!valid(up)||!valid(down)){toast('Wpisz poprawne obie częstotliwości.');return;}
+  settings.satUplink=up.replace(',','.');
+  settings.satDownlink=down.replace(',','.');
+  settings.satMode=true;
+  settings.freq=settings.satUplink;
+  settings.mode='FM SAT';
+  saveAll();
+  renderHome();
+  toast('Split SAT ustawiony');
+}
 function showSpecial(){
   const active=(type)=>lists.find(l=>l.id===settings.activeList && l.type===type);
   document.getElementById('screen').innerHTML=`
   <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
   <div class="card"><h2 class="section">FUNKCJE SPECJALNE</h2>
   <div class="special-grid">
-    <button class="${active('SAT')?'on':''}" onclick="newList('SAT')">🛰 SAT / ISS</button>
+    <button onclick="showSatSplit()">🛰 SAT / ISS SPLIT</button>
     <button class="${active('POTA')?'on':''}" onclick="newList('POTA')">🌲 POTA</button>
     <button class="${active('SOTA')?'on':''}" onclick="newList('SOTA')">⛰ SOTA</button>
     <button class="${active('IOTA')?'on':''}" onclick="newList('IOTA')">🌊 IOTA</button>
