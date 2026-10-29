@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#000000">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>C-log v0.12</title>
+<title>C-log v0.13</title>
 <style>
 :root{--bg:#000;--surface:#080808;--surface2:#111;--text:#fff;--muted:#bdbdbd;--line:#777;--accent:#ff2020;--accentText:#fff;--field:#050505;--danger:#ff3030}
 html[data-theme="light"]{--bg:#fff;--surface:#fff;--surface2:#f3f3f3;--text:#111;--muted:#555;--line:#777;--accent:#e51b23;--accentText:#fff;--field:#fff;--danger:#c9151c}
@@ -195,34 +195,29 @@ function bandFromFreq(v){
   return '';
 }
 function sanitizeFrequency(el){
-  // Automatycznie formatuj zapis bez separatora jako MHz: ostatnie 3 cyfry to kHz.
-  // Jeśli operator poda kropkę, zachowaj ją (np. 5.3515 lub 0.136).
-  const raw=String(el.value||'');
-  if(raw.includes(',')){
-    el.value=raw.replace(/,/g,'').replace(/[^0-9.]/g,'');
-  } else if(raw.includes('.')){
-    const dot=raw.indexOf('.');
-    el.value=raw.slice(0,dot+1)+raw.slice(dot+1).replace(/\./g,'').replace(/[^0-9]/g,'');
-  } else {
-    const digits=raw.replace(/\D/g,'');
-    if(digits.length>=4){
-      el.value=digits.slice(0,-3)+'.'+digits.slice(-3);
-    } else {
-      el.value=digits;
-    }
-  }
+  // W trakcie pisania nie wstawiaj separatora automatycznie — nie przesuwaj kursora.
+  // Dozwolone są cyfry i jedna kropka; przecinek blokuje osobna obsługa klawiatury.
+  let raw=String(el.value||'').replace(/[^0-9.]/g,'');
+  const dot=raw.indexOf('.');
+  if(dot>=0) raw=raw.slice(0,dot+1)+raw.slice(dot+1).replace(/\./g,'');
+  el.value=raw;
 }
 function blockFrequencyComma(e){if(e.key===','||e.key==='٫'){e.preventDefault();}}
 function formatFrequencyOnBlur(el){
   if(!el)return;
-  const v=String(el.value||'').trim();
+  let v=String(el.value||'').trim().replace(/,/g,'');
   if(!v)return;
-  if(!v.includes('.'))sanitizeFrequency(el);
-  el.value=el.value.replace(/,/g,'');
+  if(v.includes('.')){
+    const dot=v.indexOf('.');
+    v=v.slice(0,dot+1)+v.slice(dot+1).replace(/\./g,'').replace(/[^0-9]/g,'');
+  }else{
+    const digits=v.replace(/\D/g,'');
+    v=digits.length>3 ? digits.slice(0,-3)+'.'+digits.slice(-3) : digits;
+  }
+  el.value=v;
 }
 function utcInputValue(d=new Date()){return d.toISOString().slice(0,16);}
 function setUtcNow(){const el=document.getElementById('qsoUtc');if(el){el.value=utcInputValue();el.dataset.edited='0';}toast('Ustawiono aktualny czas UTC');}
-function useCommentTemplate(i){if(i==='')return;const v=settings.commentTemplates[Number(i)]||'';const el=document.getElementById('comment');if(el)el.value=v;}
 function getForm(){
   return {
     callsign:document.getElementById('callsign')?.value.trim().toUpperCase()||'',
@@ -288,13 +283,13 @@ function renderHome(){
         <div><label>Data i czas QSO (UTC)</label><input id="qsoUtc" type="datetime-local" value="${utcInputValue()}" oninput="this.dataset.edited='1'"></div>
         <div style="display:flex;align-items:end"><button type="button" class="back-button" style="width:100%;min-height:46px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--text);font-weight:700" onclick="setUtcNow()">TERAZ UTC</button></div>
       </div>
-      <label>Gotowy komentarz</label>
-      <select id="commentTemplateSelect" onchange="useCommentTemplate(this.value)"><option value="">— wybierz szablon —</option>${settings.commentTemplates.map((v,i)=>v?`<option value="${i}">${esc(v)}</option>`:'').join('')}</select>
-      <div style="height:8px"></div><label>Komentarz (można poprawić)</label>
-      <input id="comment" placeholder="Opcjonalnie">
+      <label>Komentarz (wybierz szablon lub wpisz własny)</label>
+      <input id="comment" list="commentTemplates" placeholder="Wybierz lub wpisz komentarz" autocomplete="off">
+      <datalist id="commentTemplates">${settings.commentTemplates.map(v=>v?`<option value="${esc(v)}"></option>`:'').join('')}</datalist>
     </div>
 
     <button class="primary" onclick="saveQSO()">ZAPISZ QSO</button>
+    <button type="button" onclick="clearCurrentEntry()" style="width:100%;min-height:48px;margin-top:8px;border:1px solid var(--line);border-radius:9px;background:var(--surface2);color:var(--text);font-weight:800">WYCZYŚĆ WPIS</button>
 
     <div class="nav">
       <button onclick="showQSOList()">QSO</button>
@@ -333,6 +328,18 @@ function callChanged(){
   }
 }
 
+function clearCurrentEntry(){
+  ['callsign','contactName','contactQth','rx','tx','comment'].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.value='';
+  });
+  const utc=document.getElementById('qsoUtc');
+  if(utc){utc.value=utcInputValue();utc.dataset.edited='0';}
+  const info=document.getElementById('callerInfo');
+  if(info)info.textContent='Wpisz znak korespondenta.';
+  updateBand();
+  const call=document.getElementById('callsign'); if(call)call.focus();
+  toast('Wyczyszczono bieżący wpis; ustawienia pozostały bez zmian');
+}
 function saveQSO(){
   const f=getForm();
   if(!f.callsign){toast('Wpisz callsign.');return;}
@@ -558,422 +565,13 @@ function exportADIF(){
     const bandMap={'2200 m':'2200M','630 m':'630M','160 m':'160M','80 m':'80M','60 m':'60M','40 m':'40M','30 m':'30M','20 m':'20M','17 m':'17M','15 m':'15M','12 m':'12M','10 m':'10M','6 m':'6M','4 m':'4M','2 m':'2M','70 cm':'70CM','23 cm':'23CM','13 cm':'13CM','9 cm':'9CM','6 cm':'6CM','3 cm':'3CM','1.25 cm':'1.25CM','6 mm':'6MM'};
     return adifField('CALL',q.callsign)+adifField('QSO_DATE',d.slice(0,8))+adifField('TIME_ON',d.slice(8,12))+adifField('BAND',bandMap[q.band]||q.band)+adifField('FREQ',freqMHz)+adifField('MODE',mode)+adifField('RST_RCVD',q.rx)+adifField('RST_SENT',q.tx)+adifField('TX_PWR',q.power)+adifField('NAME',q.name)+adifField('QTH',q.qth)+adifField('COMMENT',q.comment)+'<EOR>\n';
   }).join('');
-  const blob=new Blob(['ADIF Export from C-log v0.12\n<ADIF_VER:5>3.1.4\n<PROGRAMID:5>C-log\n<EOH>\n',records],{type:'application/octet-stream'});
+  const blob=new Blob(['ADIF Export from C-log v0.13\n<ADIF_VER:5>3.1.4\n<PROGRAMID:5>C-log\n<EOH>\n',records],{type:'application/octet-stream'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='C-log-QSO.adi';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
   toast('Plik ADIF przygotowany — wgraj go w QRZ Logbook');
 }
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800);}
 applyTheme();
 setInterval(()=>{document.getElementById('clock').textContent=nowUTC();const utc=document.getElementById('qsoUtc');if(utc&&utc.dataset.edited!=='1')utc.value=utcInputValue();},1000);
-renderHome();
-</script>
-</body>
-</html><!DOCTYPE html>
-<html lang="pl">
-<head>
-<meta name="color-scheme" content="dark light">
-<meta name="theme-color" content="#000000">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>C-log v0.8</title>
-<style>
-:root{--bg:#000;--surface:#080808;--surface2:#111;--text:#fff;--muted:#bdbdbd;--line:#777;--accent:#ff2020;--accentText:#fff;--field:#050505;--danger:#ff3030}
-html[data-theme="light"]{--bg:#fff;--surface:#fff;--surface2:#f3f3f3;--text:#111;--muted:#555;--line:#777;--accent:#e51b23;--accentText:#fff;--field:#fff;--danger:#c9151c}
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif} body{min-height:100vh;min-height:100dvh;padding-bottom:env(safe-area-inset-bottom, 0px)}
-body{font-size:16px}
-button,input,select{font:inherit}
-button{cursor:pointer;-webkit-tap-highlight-color:transparent}
-.app{width:100%;max-width:520px;min-height:100vh;min-height:100dvh;margin:auto;padding:10px 12px calc(28px + env(safe-area-inset-bottom, 0px));background:var(--bg);color:var(--text)}
-header{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:6px;margin-bottom:10px}
-.brand{text-align:center} h1{margin:0;font-size:30px;line-height:1;font-weight:800;letter-spacing:-.5px}
-.brand-sub{margin-top:3px;color:var(--muted);font-size:11px;letter-spacing:.8px}
-.header-btn{width:40px;height:40px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);font-size:22px}
-.header-btn:active,.navtab:active,button:active{transform:scale(.98)}
-.status{position:absolute;left:-9999px}
-.top-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:12px}
-.navtab{min-height:42px;border:2px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);font-weight:700;font-size:14px}
-.navtab.active{border-color:var(--accent);color:var(--accent)}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:12px;margin-bottom:10px}
-.section{margin:0 0 10px;font-size:22px}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-label{display:block;margin:0 0 5px 2px;color:var(--text);font-size:13px;font-weight:600}
-input,select{width:100%;min-height:46px;padding:10px 11px;border:1px solid var(--line);border-radius:8px;outline:none;background:var(--field);color:var(--text);-webkit-text-fill-color:var(--text)}
-input::placeholder{color:var(--muted);opacity:1;-webkit-text-fill-color:var(--muted)}
-input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(255,32,32,.18)}
-.call{font-size:25px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
-.freq input{font-size:20px;font-weight:700}
-.band-value{min-height:46px;display:flex;align-items:center;padding:10px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--text);font-size:18px;font-weight:700}
-.small-info{min-height:20px;margin-top:7px;color:var(--muted);font-size:13px}
-.reports{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.report-title{margin-bottom:5px;text-align:center;color:var(--muted);font-size:12px;font-weight:700}
-.report input{text-align:center;font-size:30px;font-weight:700}
-.quick{display:flex;gap:4px;margin-top:5px}
-.quick button{flex:1;min-height:36px;padding:5px 2px;border:1px solid var(--line);border-radius:7px;background:var(--surface2);color:var(--text);font-weight:700}
-.primary{width:100%;min-height:54px;border:1px solid var(--accent);border-radius:9px;background:var(--accent);color:var(--accentText);font-size:18px;font-weight:800}
-.special button,.list-actions button,.back button{min-height:44px;padding:9px 7px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-weight:700}
-.special-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.special button.on{border-color:var(--accent);color:var(--accent)}
-.active-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.badge{border:1px solid var(--accent);border-radius:14px;padding:5px 9px;background:var(--surface);color:var(--accent);font-size:12px;font-weight:700}
-.list-item{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:7px}
-.list-main{display:flex;justify-content:space-between;gap:8px}.call-list{font-size:17px;font-weight:800}
-.meta{margin-top:4px;color:var(--muted);font-size:13px}.empty{padding:28px 5px;text-align:center;color:var(--muted)}
-.back{margin-bottom:10px}
-.dialog.hidden{display:none!important}.dialog{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);z-index:10}
-.dialog-box{width:100%;max-width:420px;padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text)}
-.dialog h2{margin:0 0 10px;font-size:21px}.dialog p{color:var(--muted);font-size:15px;line-height:1.45}
-.dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}
-.dialog-actions button{min-height:46px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--text);font-weight:700}
-.dialog-actions .danger{background:var(--danger);border-color:var(--danger);color:#fff}
-.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);padding:11px 16px;border-radius:18px;background:#fff;color:#000;font-size:14px;font-weight:700;z-index:20;display:none}
-.list-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
-.theme-note{color:var(--muted);font-size:13px;margin-top:8px;line-height:1.4}
-.sat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.sat-value{font-size:20px;font-weight:700}.sat-note{font-size:13px;color:var(--muted);line-height:1.45;margin-top:8px}
-@media(max-width:370px){.app{padding-left:8px;padding-right:8px}.top-tabs{gap:3px}.navtab{font-size:12px}h1{font-size:27px}}
-</style>
-
-<script>
-window.addEventListener('error', function(e){
-  var el=document.getElementById('jsError');
-  if(el){
-    el.textContent='Błąd aplikacji: '+(e.message||'JavaScript');
-    el.style.display='block';
-  }
-  console.error(e.message||e.error);
-});
-</script>
-</head>
-<body>
-<div id="app" class="app">
-  <header>
-    <button class="header-btn" onclick="showSpecial()" aria-label="Menu">☰</button>
-    <div class="brand"><h1>C-log</h1><div class="brand-sub">by SQ3TOM</div></div>
-    <button class="header-btn" onclick="showSettings()" aria-label="Ustawienia">⚙</button>
-    <div id="clock" class="status"></div>
-  </header>
-  <div id="jsError" style="display:none;margin:0 0 10px;padding:10px;border:2px solid #ff2020;border-radius:8px;color:#ff2020;font-weight:700;background:#080808"></div><div id="screen"></div>
-</div>
-<div id="dialog" class="dialog hidden"></div>
-<div id="toast" class="toast"></div>
-
-<script>
-const KEY='clog_qsos_v1', SETTINGS='clog_settings_v1', LISTKEY='clog_lists_v1';
-let qsos=JSON.parse(localStorage.getItem(KEY)||'[]');
-let lists=JSON.parse(localStorage.getItem(LISTKEY)||'[]');
-let settings=JSON.parse(localStorage.getItem(SETTINGS)||JSON.stringify({
-  freq:'145.600', mode:'FM', power:'10', rx:'', tx:'', activeList:null, theme:'dark'
-}));
-
-
-function applyTheme(){
-  const theme=settings.theme||'dark';
-  document.documentElement.setAttribute('data-theme',theme);
-  const meta=document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute('content',theme==='dark'?'#000000':'#ffffff');
-}
-function showSettings(){
-  document.getElementById('screen').innerHTML=`
-    <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
-    <div class="card">
-      <h2 class="section">USTAWIENIA</h2>
-      <div class="list-item">
-        <b>WYGLĄD</b>
-        <div class="theme-note">Domyślnie: czarne tło i biała czcionka. Wybierz wygląd aplikacji.</div>
-        <div class="list-actions">
-          <button onclick="setTheme('dark')">● CZARNE</button>
-          <button onclick="setTheme('light')">○ BIAŁE</button>
-        </div>
-      </div>
-      <div class="list-item">
-        <b>AKTUALIZACJA APLIKACJI</b>
-        <div class="theme-note">C-log sprawdza najnowszą wersję bezpośrednio na GitHub i może pobrać APK aktualizacji.</div>
-        <div class="list-actions">
-          <button onclick="checkForUpdate()">⟳ SPRAWDŹ AKTUALIZACJĘ</button>
-        </div>
-      </div>
-      <div class="list-item">
-        <b>AKTUALNY MOTYW</b>
-        <div class="meta">${settings.theme==='dark'?'Czarne tło / biała czcionka':'Białe tło / czarna czcionka'}</div>
-      </div>
-    </div>`;
-}
-function checkForUpdate(){
-  if(window.AndroidUpdater && AndroidUpdater.checkForUpdate){
-    AndroidUpdater.checkForUpdate();
-  } else {
-    toast('Aktualizacje są dostępne tylko w APK Android');
-  }
-}
-function setTheme(theme){
-  settings.theme=theme;
-  saveAll();
-  applyTheme();
-  showSettings();
-  toast(theme==='dark'?'Czarne tło':'Białe tło');
-}
-function saveAll(){
-  localStorage.setItem(KEY,JSON.stringify(qsos));
-  localStorage.setItem(LISTKEY,JSON.stringify(lists));
-  localStorage.setItem(SETTINGS,JSON.stringify(settings));
-}
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function nowUTC(){
-  return new Date().toISOString().slice(11,16)+' UTC';
-}
-function bandFromFreq(v){
-  let f=parseFloat(String(v).replace(',','.'));
-  if(!isFinite(f)) return '';
-  if(f>=1.8&&f<=2.0)return '160 m';
-  if(f>=3.5&&f<=4.0)return '80 m';
-  if(f>=7.0&&f<=7.3)return '40 m';
-  if(f>=10.1&&f<=10.15)return '30 m';
-  if(f>=14.0&&f<=14.35)return '20 m';
-  if(f>=18.068&&f<=18.168)return '17 m';
-  if(f>=21.0&&f<=21.45)return '15 m';
-  if(f>=24.89&&f<=24.99)return '12 m';
-  if(f>=28.0&&f<=29.7)return '10 m';
-  if(f>=50&&f<=54)return '6 m';
-  if(f>=144&&f<=148)return '2 m';
-  if(f>=420&&f<=450)return '70 cm';
-  if(f>=1240&&f<=1300)return '23 cm';
-  return '';
-}
-function getForm(){
-  return {
-    callsign:document.getElementById('callsign')?.value.trim().toUpperCase()||'',
-    freq:document.getElementById('freq')?.value.trim()||settings.freq,
-    mode:document.getElementById('mode')?.value||settings.mode,
-    power:document.getElementById('power')?.value.trim()||settings.power,
-    rx:document.getElementById('rx')?.value.trim()||'',
-    tx:document.getElementById('tx')?.value.trim()||'',
-    comment:document.getElementById('comment')?.value.trim()||''
-  };
-}
-function updateBand(){
-  const f=document.getElementById('freq')?.value||'';
-  const b=bandFromFreq(f);
-  const el=document.getElementById('band');
-  if(el) el.textContent=b||'—';
-}
-function renderHome(){
-  settings.rx=''; settings.tx='';
-  document.getElementById('screen').innerHTML=`
-    <div class="top-tabs">
-      <button class="navtab active" onclick="renderHome()">QSO</button>
-      <button class="navtab" onclick="newList('POTA')">POTA</button>
-      <button class="navtab" onclick="newList('SOTA')">SOTA</button>
-      <button class="navtab" onclick="newList('IOTA')">IOTA</button>
-      <button class="navtab" onclick="showSatSplit()">SAT</button>
-    </div>
-    ${settings.activeList?`<div class="active-badges"><span class="badge">● ${esc(settings.activeList)}</span></div>`:''}
-    <div class="card">
-      <div class="row">
-        <div><label>Pasmo</label><div id="band" class="band-value">${esc(bandFromFreq(settings.freq)||'—')}</div></div>
-        <div class="freq"><label>Częstotliwość</label><input id="freq" inputmode="decimal" value="${esc(settings.freq)}" oninput="updateBand()"></div>
-      </div>
-      <div style="height:10px"></div>
-      <div class="row">
-        <div><label>Mode</label><select id="mode" onchange="if(this.value!=='FM SAT')settings.satMode=false"><option>AM</option><option>SSB</option><option>DMR</option><option>FM</option><option>C4FM</option><option>CW</option><option>FT8</option><option>FT4</option><option>FM SAT</option></select></div>
-        <div><label>Moc</label><input id="power" inputmode="decimal" value="${esc(settings.power)}" placeholder="10"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <label>Callsign</label>
-      <input id="callsign" class="call" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="SP3ABC" oninput="callChanged()">
-      <div id="callerInfo" class="small-info">Dane korespondenta pojawią się tutaj.</div>
-    </div>
-
-    <div class="card">
-      <div class="reports">
-        <div class="report">
-          <div class="report-title">RAPORT RX</div>
-          <input id="rx" inputmode="numeric" placeholder="59" onfocus="this.placeholder=''">
-          <div class="quick"><button onclick="quickReport('rx','58')">58</button><button onclick="quickReport('rx','57')">57</button><button onclick="quickReport('rx','55')">55</button></div>
-        </div>
-        <div class="report">
-          <div class="report-title">RAPORT TX</div>
-          <input id="tx" inputmode="numeric" placeholder="59" onfocus="this.placeholder=''">
-          <div class="quick"><button onclick="quickReport('tx','58')">58</button><button onclick="quickReport('tx','57')">57</button><button onclick="quickReport('tx','55')">55</button></div>
-        </div>
-      </div>
-      <div style="height:10px"></div>
-      <label>Komentarz</label>
-      <input id="comment" placeholder="Opcjonalnie">
-    </div>
-
-    <button class="primary" onclick="saveQSO()">ZAPISZ QSO</button>
-
-  `;
-  const mode=document.getElementById('mode');
-  mode.value=settings.mode;
-  updateBand();
-}
-function quickReport(id,v){document.getElementById(id).value=v;}
-let lastCall='';
-function callChanged(){
-  const el=document.getElementById('callsign');
-  el.value=el.value.toUpperCase();
-  const c=el.value.trim();
-  const info=document.getElementById('callerInfo');
-  if(!c){info.textContent='Dane korespondenta pojawią się tutaj.';return;}
-  const old=qsos.find(q=>q.callsign===c);
-  if(old) info.innerHTML=`⚠️ ${esc(c)} był już zapisany: ${esc(old.band)} • ${esc(old.mode)} • ${esc(old.time)}`;
-  else info.textContent='Lookup QRZ: gotowy do integracji. QSO można zapisać także offline.';
-}
-function saveQSO(){
-  const f=getForm();
-  if(!f.callsign){toast('Wpisz callsign.');return;}
-  if(!f.rx)f.rx='59';
-  if(!f.tx)f.tx='59';
-  const band=bandFromFreq(f.freq)||'Nieznane';
-  const dup=qsos.find(q=>q.callsign===f.callsign && q.band===band && q.listId===(settings.activeList||null));
-  if(dup){
-    showDuplicate(f,band,dup);
-    return;
-  }
-  actuallySave(f,band);
-}
-function actuallySave(f,band){
-  const t=new Date();
-  const q={
-    id:Date.now(),callsign:f.callsign,freq:f.freq,band,mode:f.mode,power:f.power,
-    rx:f.rx,tx:f.tx,comment:f.comment,satUplink:settings.satMode?settings.satUplink:null,satDownlink:settings.satMode?settings.satDownlink:null,time:t.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'}),
-    date:t.toLocaleDateString('pl-PL'),utc:t.toISOString(),listId:settings.activeList||null
-  };
-  qsos.unshift(q);
-  settings.freq=f.freq;settings.mode=f.mode;settings.power=f.power;
-  saveAll();
-  toast('✓ QSO ZAPISANE');
-  setTimeout(()=>renderHome(),500);
-}
-function showDuplicate(f,band,dup){
-  const d=document.getElementById('dialog');
-  d.classList.remove('hidden');
-  d.innerHTML=`<div class="dialog-box">
-    <h2>⚠️ DUPLIKAT</h2>
-    <p><b>${esc(f.callsign)}</b> jest już zapisany w tym logu na paśmie <b>${esc(band)}</b>.</p>
-    <p>Poprzednie QSO: ${esc(dup.date)} ${esc(dup.time)} • ${esc(dup.freq)} MHz • ${esc(dup.mode)} • ${esc(dup.rx)}/${esc(dup.tx)}</p>
-    <p>Czy zapisać ponownie?</p>
-    <div class="dialog-actions"><button onclick="closeDialog()">NIE</button><button class="danger" onclick='duplicateNow(${JSON.stringify(f)},${JSON.stringify(band)})'>TAK, ZDUPLIKUJ</button></div>
-  </div>`;
-}
-function duplicateNow(f,band){closeDialog();actuallySave(f,band);}
-function closeDialog(){document.getElementById('dialog').classList.add('hidden');}
-function showQSOList(){
-  document.getElementById('screen').innerHTML=`
-  <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
-  <div class="card"><h2 class="section">LISTA QSO</h2><input id="search" placeholder="🔍 Szukaj callsign / pasmo" oninput="renderItems()"></div>
-  <div id="items"></div>`;
-  renderItems();
-}
-function renderItems(){
-  const s=(document.getElementById('search')?.value||'').toUpperCase();
-  const arr=qsos.filter(q=>(q.callsign+' '+q.band+' '+q.mode).toUpperCase().includes(s));
-  const box=document.getElementById('items');
-  if(!arr.length){box.innerHTML='<div class="empty">Brak zapisanych QSO.</div>';return;}
-  box.innerHTML=arr.map(q=>`<div class="list-item" onclick="editQSO(${q.id})">
-    <div class="list-main"><span class="call-list">${esc(q.callsign)}</span><span>${esc(q.time)}</span></div>
-    <div class="meta">${esc(q.band)} • ${esc(q.freq)} • ${esc(q.mode)} • RX ${esc(q.rx)} / TX ${esc(q.tx)}</div>
-    ${q.satUplink&&q.satDownlink?`<div class="meta">SAT split TX ${esc(q.satUplink)} / RX ${esc(q.satDownlink)} MHz</div>`:''}
-    ${q.listId?`<div class="meta">Lista: ${esc(q.listId)}</div>`:''}
-  </div>`).join('');
-}
-function editQSO(id){
-  const q=qsos.find(x=>x.id===id); if(!q)return;
-  document.getElementById('screen').innerHTML=`
-  <div class="back"><button onclick="showQSOList()">← QSO</button></div>
-  <div class="card"><h2 class="section">${esc(q.callsign)}</h2>
-  <div class="small-info">${esc(q.date)} • ${esc(q.time)} • ${esc(q.band)} • ${esc(q.freq)} • ${esc(q.mode)}</div>
-  <p>RX: <b>${esc(q.rx)}</b> &nbsp; TX: <b>${esc(q.tx)}</b></p>
-  <p>Moc: <b>${esc(q.power)} W</b></p>
-   ${q.satUplink&&q.satDownlink?`<p>SAT split — TX / uplink: <b>${esc(q.satUplink)} MHz</b>; RX / downlink: <b>${esc(q.satDownlink)} MHz</b></p>`:'' }
-  <p>${esc(q.comment||'Brak komentarza')}</p></div>
-  <div class="list-actions"><button onclick="deleteQSO(${q.id})">Usuń QSO</button><button onclick="renderHome()">LOGUJ</button></div>`;
-}
-function deleteQSO(id){qsos=qsos.filter(q=>q.id!==id);saveAll();toast('QSO usunięte');setTimeout(showQSOList,300);}
-function showSatSplit(){
-  const up=settings.satUplink||'145.990';
-  const down=settings.satDownlink||'437.800';
-  document.getElementById('screen').innerHTML=`
-    <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
-    <div class="card">
-      <h2 class="section">SAT / ISS — SPLIT</h2>
-      <div class="sat-note">Ustaw osobno częstotliwość nadawania (uplink) i odbioru (downlink). Wartości początkowe są przykładowymi częstotliwościami przemiennika ISS; sprawdź aktualne ustawienia satelity przed łącznością.</div>
-      <div class="sat-grid">
-        <div><label>TX / UPLINK (MHz)</label><input id="satUplink" class="sat-value" inputmode="decimal" value="${esc(up)}"></div>
-        <div><label>RX / DOWNLINK (MHz)</label><input id="satDownlink" class="sat-value" inputmode="decimal" value="${esc(down)}"></div>
-      </div>
-      <div style="height:12px"></div>
-      <label>Tryb</label><div class="band-value">FM SAT</div>
-      <div class="list-actions">
-        <button onclick="applySatSplit()">ZASTOSUJ SPLIT</button>
-        <button onclick="renderHome()">ANULUJ</button>
-      </div>
-    </div>`;
-}
-function applySatSplit(){
-  const up=(document.getElementById('satUplink')?.value||'').trim();
-  const down=(document.getElementById('satDownlink')?.value||'').trim();
-  const valid=v=>{const n=parseFloat(v.replace(',','.'));return v!==''&&Number.isFinite(n)&&n>0;};
-  if(!valid(up)||!valid(down)){toast('Wpisz poprawne obie częstotliwości.');return;}
-  settings.satUplink=up.replace(',','.');
-  settings.satDownlink=down.replace(',','.');
-  settings.satMode=true;
-  settings.freq=settings.satUplink;
-  settings.mode='FM SAT';
-  saveAll();
-  renderHome();
-  toast('Split SAT ustawiony');
-}
-function showSpecial(){
-  const active=(type)=>lists.find(l=>l.id===settings.activeList && l.type===type);
-  document.getElementById('screen').innerHTML=`
-  <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
-  <div class="card"><h2 class="section">FUNKCJE SPECJALNE</h2>
-  <div class="special-grid">
-    <button onclick="showSatSplit()">🛰 SAT / ISS SPLIT</button>
-    <button class="${active('POTA')?'on':''}" onclick="newList('POTA')">🌲 POTA</button>
-    <button class="${active('SOTA')?'on':''}" onclick="newList('SOTA')">⛰ SOTA</button>
-    <button class="${active('IOTA')?'on':''}" onclick="newList('IOTA')">🌊 IOTA</button>
-    <button class="${active('LLOTA')?'on':''}" onclick="newList('LLOTA')">🏝 LLOTA</button>
-    <button class="${active('WWFF')?'on':''}" onclick="newList('WWFF')">🌳 WWFF</button>
-    <button onclick="showLists()">📋 LISTY</button>
-  </div></div>
-  <div class="card">
-    <div class="small-info">Aktywna lista: ${settings.activeList?'<b>'+esc(settings.activeList)+'</b>':'brak'}</div>
-    <div class="theme-note">C-log działa offline. Aktualizacje aplikacji są pobierane bezpośrednio z GitHub.</div>
-  </div>`;
-}
-function newList(type){
-  const name=prompt('Nazwa nowej listy (np. PL-XXXX):','PL-XXXX');
-  if(!name)return;
-  const loc=prompt('Lokalizacja / locator stacji (np. JO82XX). W wersji APK pobierzemy GPS automatycznie:','');
-  const id=Date.now();
-  lists.unshift({id,name,type,location:loc||'Nie podano',start:new Date().toISOString(),status:'AKTYWNA'});
-  settings.activeList=name;saveAll();toast('Lista '+name+' aktywna');setTimeout(renderHome,400);
-}
-function showLists(){
-  document.getElementById('screen').innerHTML=`
-  <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
-  <div class="card"><h2 class="section">LISTY AKTYWACJI</h2>
-  ${lists.length?lists.map(l=>`<div class="list-item">
-    <div class="list-main"><b>${esc(l.name)}</b><span>${esc(l.type)}</span></div>
-    <div class="meta">📍 ${esc(l.location)} • ${esc(l.status)}</div>
-    <div class="meta">QSO: ${qsos.filter(q=>q.listId===l.name).length}</div>
-    <div class="list-actions"><button onclick="activateList('${String(l.name).replace(/'/g,"\\'")}')">AKTYWUJ</button><button onclick="finishList(${l.id})">ZAKOŃCZ</button></div>
-  </div>`).join(''):'<div class="empty">Brak list aktywacji.</div>'}
-  </div>`;
-}
-function activateList(name){settings.activeList=name;saveAll();toast('Aktywna: '+name);setTimeout(renderHome,400);}
-function finishList(id){
-  const l=lists.find(x=>x.id===id);if(!l)return;
-  l.status='ZAKOŃCZONA';if(settings.activeList===l.name)settings.activeList=null;saveAll();showLists();
-}
-function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800);}
-applyTheme();
-setInterval(()=>{document.getElementById('clock').textContent=nowUTC()},1000);
 renderHome();
 </script>
 </body>
