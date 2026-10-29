@@ -5,17 +5,19 @@
 <meta name="theme-color" content="#000000">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>C-log v0.13</title>
+<title>C-log v0.15 testowa</title>
 <style>
 :root{--bg:#000;--surface:#080808;--surface2:#111;--text:#fff;--muted:#bdbdbd;--line:#777;--accent:#ff2020;--accentText:#fff;--field:#050505;--danger:#ff3030}
 html[data-theme="light"]{--bg:#fff;--surface:#fff;--surface2:#f3f3f3;--text:#111;--muted:#555;--line:#777;--accent:#e51b23;--accentText:#fff;--field:#fff;--danger:#c9151c}
+html[data-theme="green"]{--bg:#06210f;--surface:#0b3017;--surface2:#124321;--text:#fff;--muted:#d1f0d8;--line:#398b50;--accent:#20e05b;--accentText:#001b08;--field:#071d0e;--danger:#ff3030}
+html[data-theme="blue"]{--bg:#001a45;--surface:#03245d;--surface2:#073477;--text:#fff;--muted:#c8dcff;--line:#4384d9;--accent:#168cff;--accentText:#fff;--field:#00163c;--danger:#ff3030}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
 html{min-height:100vh}
 body{font-size:16px;padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px))}
 button,input,select{font:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
-.app{width:100%;max-width:520px;min-height:100vh;margin:auto;padding:10px 12px calc(24px + env(safe-area-inset-bottom, 0px));background:var(--bg);color:var(--text)}
+.app{width:100%;max-width:520px;min-height:100vh;margin:auto;padding:36px 12px calc(24px + env(safe-area-inset-bottom, 0px));background:var(--bg);color:var(--text)}
 header{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:6px;margin-bottom:10px}
 .brand{text-align:center} h1{margin:0;font-size:30px;line-height:1;font-weight:800;letter-spacing:-.5px}
 .brand-sub{margin-top:3px;color:var(--muted);font-size:11px;letter-spacing:.8px}
@@ -61,6 +63,10 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(25
 .dialog-actions .danger{background:var(--danger);border-color:var(--danger);color:#fff}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);padding:11px 16px;border-radius:18px;background:#fff;color:#000;font-size:14px;font-weight:700;z-index:20;display:none}
 .list-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.comment-templates{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:7px 0}
+.comment-templates button{min-height:38px;padding:6px;border:1px solid var(--line);border-radius:7px;background:var(--surface2);color:var(--text);font-size:13px;font-weight:700}
+textarea{width:100%;min-height:74px;padding:10px 11px;border:1px solid var(--line);border-radius:8px;outline:none;background:var(--field);color:var(--text);font:inherit;resize:vertical}
+textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(255,32,32,.18)}
 .theme-note{color:var(--muted);font-size:13px;margin-top:8px;line-height:1.4}
 @media(max-width:370px){.app{padding-left:8px;padding-right:8px}.top-tabs{gap:3px}.navtab{font-size:12px}h1{font-size:27px}}
 </style>
@@ -105,7 +111,7 @@ function applyTheme(){
   const theme=settings.theme||'dark';
   document.documentElement.setAttribute('data-theme',theme);
   const meta=document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute('content',theme==='dark'?'#000000':'#ffffff');
+  if(meta) meta.setAttribute('content',theme==='light'?'#ffffff':theme==='green'?'#06210f':theme==='blue'?'#001a45':'#000000');
 }
 function showSettings(){
   document.getElementById('screen').innerHTML=`
@@ -118,6 +124,8 @@ function showSettings(){
         <div class="list-actions">
           <button onclick="setTheme('dark')">● CZARNE</button>
           <button onclick="setTheme('light')">○ BIAŁE</button>
+          <button onclick="setTheme('green')">● ZIELONE</button>
+          <button onclick="setTheme('blue')">● NIEBIESKIE</button>
         </div>
       </div>
       <div class="list-item">
@@ -132,10 +140,6 @@ function showSettings(){
         <div class="theme-note">Edytuj teksty, które później wybierzesz podczas logowania.</div>
         ${settings.commentTemplates.map((v,i)=>`<label style="margin-top:8px">Szablon ${i+1}</label><input id="commentTemplate${i}" value="${esc(v)}" placeholder="Komentarz ${i+1}">`).join('')}
         <div class="list-actions"><button onclick="saveCommentTemplates()">ZAPISZ SZABLONY</button><button onclick="renderHome()">WRÓĆ DO LOGOWANIA</button></div>
-      </div>
-      <div class="list-item">
-        <b>AKTUALNY MOTYW</b>
-        <div class="meta">${settings.theme==='dark'?'Czarne tło / biała czcionka':'Białe tło / czarna czcionka'}</div>
       </div>
     </div>`;
 }
@@ -155,7 +159,7 @@ function setTheme(theme){
   saveAll();
   applyTheme();
   showSettings();
-  toast(theme==='dark'?'Czarne tło':'Białe tło');
+  toast(({dark:'Czarne tło',light:'Białe tło',green:'Zielone tło',blue:'Niebieskie tło'})[theme]||'Zmieniono tło');
 }
 function saveAll(){
   localStorage.setItem(KEY,JSON.stringify(qsos));
@@ -173,6 +177,10 @@ function bandFromFreq(v){
   if(f>=0.472&&f<=0.479)return '630 m';
   if(f>=1.81&&f<=2.0)return '160 m';
   if(f>=3.5&&f<=3.8)return '80 m';
+  if(f>=5.25&&f<=5.45)return '60 m';
+  if(f>=7.0&&f<=7.3)return '40 m';
+  if(f>=10.1&&f<=10.15)return '30 m';
+  if(f>=14.0&&f<=14.35)return '20 m';
   if(f>=5.3515&&f<=5.3665)return '60 m';
   if(f>=7.0&&f<=7.2)return '40 m';
   if(f>=10.1&&f<=10.15)return '30 m';
@@ -212,7 +220,10 @@ function formatFrequencyOnBlur(el){
     v=v.slice(0,dot+1)+v.slice(dot+1).replace(/\./g,'').replace(/[^0-9]/g,'');
   }else{
     const digits=v.replace(/\D/g,'');
-    v=digits.length>3 ? digits.slice(0,-3)+'.'+digits.slice(-3) : digits;
+    if(digits.length>=6) v=digits.slice(0,3)+'.'+digits.slice(3);
+    else if(digits.length===5) v=digits.slice(0,2)+'.'+digits.slice(2);
+    else if(digits.length===4) v=digits.slice(0,1)+'.'+digits.slice(1);
+    else v=digits;
   }
   el.value=v;
 }
@@ -238,20 +249,23 @@ function updateBand(){
   const el=document.getElementById('band');
   if(el) el.textContent=b||'—';
 }
-function renderHome(){
-  settings.rx=''; settings.tx='';
-  const rememberedCall=settings.lastCallsign||''; const rememberedName=settings.lastName||''; const rememberedQth=settings.lastQth||'';
+function renderHome(editId=null){
+  const editing=editId!==null?qsos.find(x=>x.id===editId):null;
+  editingQsoId=editing?editing.id:null;
+  if(!editing){settings.rx=''; settings.tx='';}
+  const rememberedCall=editing?.callsign||(settings.lastCallsign||''); const rememberedName=editing?.name||(settings.lastName||''); const rememberedQth=editing?.qth||(settings.lastQth||'');
+  const formFreq=editing?.freq||settings.freq, formMode=editing?.mode||settings.mode, formPower=editing?.power||settings.power;
   document.getElementById('screen').innerHTML=`
     ${settings.activeList?`<div class="active-badges"><span class="badge">● ${esc(settings.activeList)}</span></div>`:''}
     <div class="card">
       <div class="row">
-        <div><label>Pasmo</label><div id="band" class="band-value">${esc(bandFromFreq(settings.freq)||'—')}</div></div>
-        <div class="freq"><label>Częstotliwość</label><input id="freq" inputmode="decimal" value="${esc(settings.freq)}" oninput="sanitizeFrequency(this);updateBand()" onblur="formatFrequencyOnBlur(this);updateBand()" onkeydown="blockFrequencyComma(event)"></div>
+        <div><label>Pasmo</label><div id="band" class="band-value">${esc(editing?.band||bandFromFreq(formFreq)||'—')}</div></div>
+        <div class="freq"><label>Częstotliwość</label><input id="freq" inputmode="decimal" value="${esc(formFreq)}" oninput="sanitizeFrequency(this);updateBand()" onblur="formatFrequencyOnBlur(this);updateBand()" onkeydown="blockFrequencyComma(event)"></div>
       </div>
       <div style="height:10px"></div>
       <div class="row">
         <div><label>Mode</label><select id="mode"><option>AM</option><option>SSB</option><option>DMR</option><option>FM</option><option>C4FM</option><option>CW</option><option>FT8</option><option>FT4</option><option>FM SAT</option></select></div>
-        <div><label>Moc</label><input id="power" inputmode="decimal" value="${esc(settings.power)}" placeholder="10"></div>
+        <div><label>Moc</label><input id="power" inputmode="decimal" value="${esc(formPower)}" placeholder="10"></div>
       </div>
     </div>
 
@@ -284,11 +298,11 @@ function renderHome(){
         <div style="display:flex;align-items:end"><button type="button" class="back-button" style="width:100%;min-height:46px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--text);font-weight:700" onclick="setUtcNow()">TERAZ UTC</button></div>
       </div>
       <label>Komentarz (wybierz szablon lub wpisz własny)</label>
-      <input id="comment" list="commentTemplates" placeholder="Wybierz lub wpisz komentarz" autocomplete="off">
-      <datalist id="commentTemplates">${settings.commentTemplates.map(v=>v?`<option value="${esc(v)}"></option>`:'').join('')}</datalist>
+      <div class="comment-templates">${settings.commentTemplates.map((v,i)=>v?`<button type="button" onclick="applyCommentTemplate(${i})">${esc(v.length>18?v.slice(0,18)+'…':v)}</button>`:'').join('')}</div>
+      <textarea id="comment" placeholder="Wybierz szablon powyżej albo wpisz własny komentarz">${esc(editing?.comment||'')}</textarea>
     </div>
 
-    <button class="primary" onclick="saveQSO()">ZAPISZ QSO</button>
+    <button class="primary" onclick="saveQSO()">${editing?'ZAPISZ ZMIANY':'ZAPISZ QSO'}</button>
     <button type="button" onclick="clearCurrentEntry()" style="width:100%;min-height:48px;margin-top:8px;border:1px solid var(--line);border-radius:9px;background:var(--surface2);color:var(--text);font-weight:800">WYCZYŚĆ WPIS</button>
 
     <div class="nav">
@@ -298,7 +312,8 @@ function renderHome(){
     </div>
   `;
   const mode=document.getElementById('mode');
-  mode.value=settings.mode;
+  mode.value=formMode;
+  if(editing){document.getElementById('rx').value=editing.rx||'';document.getElementById('tx').value=editing.tx||'';const u=document.getElementById('qsoUtc');u.value=(editing.utc||new Date().toISOString()).slice(0,16);u.dataset.edited='1';}
   updateBand();
   const call=document.getElementById('callsign'), rx=document.getElementById('rx'), tx=document.getElementById('tx');
   call.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupCallsign().finally(()=>rx.focus());}});
@@ -306,11 +321,14 @@ function renderHome(){
   rx.addEventListener('input',()=>{if(rx.value.length>=2)tx.focus();});
   rx.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();tx.focus();}});
   tx.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('comment').focus();}});
-  if(rememberedCall){const old=qsos.find(q=>q.callsign===rememberedCall);if(old)document.getElementById('callerInfo').textContent='Ostatni korespondent zachowany. Wpisz nowy znak, aby zmienić.';}
+  if(rememberedCall){const old=qsos.find(q=>q.callsign===rememberedCall);if(old)document.getElementById('callerInfo').textContent='Dane lokalne zachowane; po Enter kursor przejdzie do raportu RX.';}
+  if(editing)document.getElementById('callerInfo').textContent='Edytujesz zapisane QSO. Zapisz zmiany, aby zaktualizować wpis.';
 
 }
+function applyCommentTemplate(i){const el=document.getElementById('comment');if(!el)return;const v=settings.commentTemplates[i]||'';if(!v)return;el.value=v;el.focus();el.setSelectionRange(el.value.length,el.value.length);}
 function quickReport(id,v){document.getElementById(id).value=v;}
 let lastCall='';
+let editingQsoId=null;
 function callChanged(){
   const el=document.getElementById('callsign');
   el.value=el.value.toUpperCase();
@@ -346,6 +364,7 @@ function saveQSO(){
   if(!f.rx)f.rx='59';
   if(!f.tx)f.tx='59';
   const band=bandFromFreq(f.freq)||'Nieznane';
+  if(editingQsoId!==null){updateExistingQSO(f,band);return;}
   const dup=qsos.find(q=>q.callsign===f.callsign && q.band===band && q.listId===(settings.activeList||null));
   if(dup){
     showDuplicate(f,band,dup);
@@ -367,6 +386,13 @@ function actuallySave(f,band){
   saveAll();
   toast('✓ QSO ZAPISANE');
   setTimeout(()=>renderHome(),500);
+}
+function updateExistingQSO(f,band){
+  const idx=qsos.findIndex(q=>q.id===editingQsoId);if(idx<0){editingQsoId=null;toast('Nie znaleziono edytowanego QSO');return;}
+  const old=qsos[idx];const entered=String(f.qsoUtc||'').trim();const t=entered?new Date(entered+'Z'):new Date();
+  if(!Number.isFinite(t.getTime())){toast('Niepoprawna data lub godzina UTC');return;}
+  qsos[idx]={...old,callsign:f.callsign,name:f.name,qth:f.qth,freq:f.freq,band,mode:f.mode,power:f.power,rx:f.rx,tx:f.tx,comment:f.comment,time:t.toISOString().slice(11,16)+' UTC',date:t.toISOString().slice(0,10),utc:t.toISOString()};
+  settings.freq=String(f.freq).replace(/,/g,'');settings.mode=f.mode;settings.power=f.power;settings.lastCallsign=f.callsign;settings.lastName=f.name;settings.lastQth=f.qth;saveAll();editingQsoId=null;toast('✓ ZMIANY ZAPISANE');setTimeout(showQSOList,450);
 }
 function showDuplicate(f,band,dup){
   const d=document.getElementById('dialog');
@@ -399,17 +425,7 @@ function renderItems(){
     ${q.listId?`<div class="meta">Lista: ${esc(q.listId)}</div>`:''}
   </div>`).join('');
 }
-function editQSO(id){
-  const q=qsos.find(x=>x.id===id); if(!q)return;
-  document.getElementById('screen').innerHTML=`
-  <div class="back"><button onclick="showQSOList()">← QSO</button></div>
-  <div class="card"><h2 class="section">${esc(q.callsign)}</h2>
-  <div class="small-info">${esc(q.date)} • ${esc(q.time)} • ${esc(q.band)} • ${esc(q.freq)} • ${esc(q.mode)}</div>
-  <p>Imię: <b>${esc(q.name||'—')}</b> • QTH: <b>${esc(q.qth||'—')}</b></p><p>RX: <b>${esc(q.rx)}</b> &nbsp; TX: <b>${esc(q.tx)}</b></p>
-  <p>Moc: <b>${esc(q.power)} W</b></p>
-  <p>${esc(q.comment||'Brak komentarza')}</p></div>
-  <div class="list-actions"><button onclick="deleteQSO(${q.id})">Usuń QSO</button><button onclick="renderHome()">LOGUJ</button></div>`;
-}
+function editQSO(id){renderHome(id);}
 function deleteQSO(id){const q=qsos.find(x=>x.id===id);if(!q)return;if(!confirm('Usunąć QSO '+q.callsign+'? Tej operacji nie można cofnąć.'))return;qsos=qsos.filter(q=>q.id!==id);saveAll();toast('QSO usunięte');setTimeout(showQSOList,300);}
 function showSpecial(){
   const active=(type)=>lists.find(l=>l.id===settings.activeList && l.type===type);
@@ -565,7 +581,7 @@ function exportADIF(){
     const bandMap={'2200 m':'2200M','630 m':'630M','160 m':'160M','80 m':'80M','60 m':'60M','40 m':'40M','30 m':'30M','20 m':'20M','17 m':'17M','15 m':'15M','12 m':'12M','10 m':'10M','6 m':'6M','4 m':'4M','2 m':'2M','70 cm':'70CM','23 cm':'23CM','13 cm':'13CM','9 cm':'9CM','6 cm':'6CM','3 cm':'3CM','1.25 cm':'1.25CM','6 mm':'6MM'};
     return adifField('CALL',q.callsign)+adifField('QSO_DATE',d.slice(0,8))+adifField('TIME_ON',d.slice(8,12))+adifField('BAND',bandMap[q.band]||q.band)+adifField('FREQ',freqMHz)+adifField('MODE',mode)+adifField('RST_RCVD',q.rx)+adifField('RST_SENT',q.tx)+adifField('TX_PWR',q.power)+adifField('NAME',q.name)+adifField('QTH',q.qth)+adifField('COMMENT',q.comment)+'<EOR>\n';
   }).join('');
-  const blob=new Blob(['ADIF Export from C-log v0.13\n<ADIF_VER:5>3.1.4\n<PROGRAMID:5>C-log\n<EOH>\n',records],{type:'application/octet-stream'});
+  const blob=new Blob(['ADIF Export from C-log v0.15\n<ADIF_VER:5>3.1.4\n<PROGRAMID:5>C-log\n<EOH>\n',records],{type:'application/octet-stream'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='C-log-QSO.adi';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
   toast('Plik ADIF przygotowany — wgraj go w QRZ Logbook');
 }
