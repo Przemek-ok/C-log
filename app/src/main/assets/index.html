@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#000000">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>C-log v0.15 testowa</title>
+<title>C-log v0.16 testowa</title>
 <style>
 :root{--bg:#000;--surface:#080808;--surface2:#111;--text:#fff;--muted:#bdbdbd;--line:#777;--accent:#ff2020;--accentText:#fff;--field:#050505;--danger:#ff3030}
 html[data-theme="light"]{--bg:#fff;--surface:#fff;--surface2:#f3f3f3;--text:#111;--muted:#555;--line:#777;--accent:#e51b23;--accentText:#fff;--field:#fff;--danger:#c9151c}
@@ -97,6 +97,7 @@ window.addEventListener('error', function(e){
 
 <script>
 const KEY='clog_qsos_v1', SETTINGS='clog_settings_v1', LISTKEY='clog_lists_v1';
+let selectedQsoIds=new Set(); let holdDeleteTimer=null; let holdDeleteFired=false;
 let qsos=JSON.parse(localStorage.getItem(KEY)||'[]');
 let lists=JSON.parse(localStorage.getItem(LISTKEY)||'[]');
 let settings=JSON.parse(localStorage.getItem(SETTINGS)||JSON.stringify({
@@ -408,25 +409,45 @@ function showDuplicate(f,band,dup){
 function duplicateNow(f,band){closeDialog();actuallySave(f,band);}
 function closeDialog(){document.getElementById('dialog').classList.add('hidden');}
 function showQSOList(){
+  selectedQsoIds=new Set();
   document.getElementById('screen').innerHTML=`
   <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
-  <div class="card"><h2 class="section">LISTA QSO</h2><input id="search" placeholder="🔍 Szukaj callsign / pasmo" oninput="renderItems()"></div>
+  <div class="card"><h2 class="section">LISTA QSO</h2><input id="search" placeholder="🔍 Szukaj callsign / pasmo" oninput="renderItems()">
+    <div class="list-actions"><button onclick="selectVisibleQSO(true)">ZAZNACZ WIDOCZNE</button><button onclick="selectVisibleQSO(false)">ODZNACZ</button></div>
+    <div class="list-actions"><button onclick="deleteSelectedQSO()">USUŃ ZAZNACZONE</button><button id="holdDeleteLog" style="background:var(--danger);color:#fff;border-color:var(--danger)" onpointerdown="startHoldDeleteLog()" onpointerup="cancelHoldDeleteLog()" onpointerleave="cancelHoldDeleteLog()" onpointercancel="cancelHoldDeleteLog()" onclick="if(holdDeleteFired){holdDeleteFired=false;return;}toast('Przytrzymaj przycisk przez 1 sekundę, aby usunąć cały log')">PRZYTRZYMAJ 1 S — USUŃ LOG</button></div>
+    <div class="theme-note">Usunięcie jest trwałe. Przytrzymaj czerwony przycisk przez 1 sekundę, aby usunąć wszystkie QSO.</div>
+  </div>
   <div id="items"></div>`;
   renderItems();
 }
-function renderItems(){
+function getVisibleQSO(){
   const s=(document.getElementById('search')?.value||'').toUpperCase();
-  const arr=qsos.filter(q=>(q.callsign+' '+(q.name||'')+' '+(q.qth||'')+' '+q.band+' '+q.mode).toUpperCase().includes(s));
-  const box=document.getElementById('items');
+  return qsos.filter(q=>(q.callsign+' '+(q.name||'')+' '+(q.qth||'')+' '+q.band+' '+q.mode+' '+(q.listId||'')).toUpperCase().includes(s));
+}
+function renderItems(){
+  const arr=getVisibleQSO(); const box=document.getElementById('items'); if(!box)return;
   if(!arr.length){box.innerHTML='<div class="empty">Brak zapisanych QSO.</div>';return;}
-  box.innerHTML=arr.map(q=>`<div class="list-item" onclick="editQSO(${q.id})">
-    <div class="list-main"><span class="call-list">${esc(q.callsign)}</span><span>${esc(q.time)}</span></div>
+  box.innerHTML=arr.map(q=>`<div class="list-item">
+    <div class="list-main"><label style="display:flex;align-items:center;gap:8px;margin:0"><input type="checkbox" style="width:22px;min-height:22px" ${selectedQsoIds.has(q.id)?'checked':''} onchange="toggleQSOSelection(${q.id},this.checked)"><span class="call-list">${esc(q.callsign)}</span></label><span>${esc(q.time)}</span></div>
     <div class="meta">${esc(q.name||'')} ${q.qth?'• '+esc(q.qth):''}</div><div class="meta">${esc(q.band)} • ${esc(q.freq)} • ${esc(q.mode)} • RX ${esc(q.rx)} / TX ${esc(q.tx)}</div>
-    ${q.listId?`<div class="meta">Lista: ${esc(q.listId)}</div>`:''}
+    ${q.listId?`<div class="meta">Projekt/lista: ${esc(q.listId)}</div>`:''}
+    <div class="list-actions"><button onclick="editQSO(${q.id})">EDYTUJ QSO</button><button onclick="deleteQSO(${q.id})">USUŃ QSO</button></div>
   </div>`).join('');
 }
+function toggleQSOSelection(id,checked){if(checked)selectedQsoIds.add(id);else selectedQsoIds.delete(id);}
+function selectVisibleQSO(checked){getVisibleQSO().forEach(q=>checked?selectedQsoIds.add(q.id):selectedQsoIds.delete(q.id));renderItems();}
+function deleteSelectedQSO(){
+  const ids=new Set(selectedQsoIds); if(!ids.size){toast('Najpierw zaznacz co najmniej jedno QSO');return;}
+  if(!confirm('Usunąć '+ids.size+' zaznaczonych QSO? Tej operacji nie można cofnąć.'))return;
+  qsos=qsos.filter(q=>!ids.has(q.id));selectedQsoIds=new Set();saveAll();toast('Usunięto zaznaczone QSO');renderItems();
+}
+function startHoldDeleteLog(){
+  holdDeleteFired=false;clearTimeout(holdDeleteTimer);
+  holdDeleteTimer=setTimeout(()=>{holdDeleteFired=true;if(!qsos.length){toast('Log jest już pusty');return;}if(confirm('OSTRZEŻENIE: usunąć WSZYSTKIE zapisane QSO? Projektów i list aktywacji to nie usunie.')){qsos=[];selectedQsoIds=new Set();saveAll();toast('Cały log QSO usunięty');showQSOList();}},1000);
+}
+function cancelHoldDeleteLog(){if(holdDeleteTimer){clearTimeout(holdDeleteTimer);holdDeleteTimer=null;}}
 function editQSO(id){renderHome(id);}
-function deleteQSO(id){const q=qsos.find(x=>x.id===id);if(!q)return;if(!confirm('Usunąć QSO '+q.callsign+'? Tej operacji nie można cofnąć.'))return;qsos=qsos.filter(q=>q.id!==id);saveAll();toast('QSO usunięte');setTimeout(showQSOList,300);}
+function deleteQSO(id){const q=qsos.find(x=>x.id===id);if(!q)return;if(!confirm('Usunąć QSO '+q.callsign+'? Tej operacji nie można cofnąć.'))return;qsos=qsos.filter(q=>q.id!==id);selectedQsoIds.delete(id);saveAll();toast('QSO usunięte');renderItems();}
 function showSpecial(){
   const active=(type)=>lists.find(l=>l.id===settings.activeList && l.type===type);
   document.getElementById('screen').innerHTML=`
@@ -438,7 +459,8 @@ function showSpecial(){
     <button class="${active('SOTA')?'on':''}" onclick="newList('SOTA')">⛰ SOTA</button>
     <button class="${active('IOTA')?'on':''}" onclick="newList('IOTA')">🌊 IOTA</button>
     <button class="${active('WWFF')?'on':''}" onclick="newList('WWFF')">🌳 WWFF</button>
-    <button onclick="showLists()">📋 LISTY</button>
+    <button onclick="showLists()">📋 PROJEKTY / LISTY</button>
+    <button onclick="createProject()">＋ NOWY PROJEKT</button>
     <button onclick="exportADIF()">⇧ EKSPORT DO QRZ.COM (ADIF)</button>
     <button onclick="showQSOList()">📒 PRZEGLĄDAJ LOG QSO</button>
   </div></div>
@@ -534,27 +556,46 @@ function applySatSplit(){
   toast('Split SAT ustawiony');
 }
 
-function newList(type){
-  const name=prompt('Nazwa nowej listy (np. PL-XXXX):','PL-XXXX');
-  if(!name)return;
-  const loc=prompt('Lokalizacja / locator stacji (np. JO82XX). W wersji APK pobierzemy GPS automatycznie:','');
+function createProject(type='PROJEKT'){
+  const name=prompt('Nazwa projektu / aktywacji (możesz ją później zmienić):',type==='PROJEKT'?'POTA-PL-XXXX':'PL-XXXX');
+  if(!name||!name.trim())return;
+  const locator=prompt('Locator stacji lub miejsca (np. JO82XX):','')||'';
+  const telemetry=prompt('Dane telemetryczne / dodatkowe dane projektu (opcjonalnie):','')||'';
+  const projectType=type==='PROJEKT'?(prompt('Typ projektu: POTA, SOTA, IOTA, WWFF lub INNE','POTA')||'POTA').toUpperCase():type;
   const id=Date.now();
-  lists.unshift({id,name,type,location:loc||'Nie podano',start:new Date().toISOString(),status:'AKTYWNA'});
-  settings.activeList=name;saveAll();toast('Lista '+name+' aktywna');setTimeout(renderHome,400);
+  lists.unshift({id,name:name.trim(),type:projectType,location:locator.trim()||'Nie podano',locator:locator.trim(),telemetry:telemetry.trim(),start:new Date().toISOString(),status:'AKTYWNA'});
+  settings.activeList=name.trim();saveAll();toast('Projekt utworzony i aktywny');setTimeout(renderHome,350);
 }
+function newList(type){createProject(type);}
 function showLists(){
   document.getElementById('screen').innerHTML=`
   <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
-  <div class="card"><h2 class="section">LISTY AKTYWACJI</h2>
+  <div class="card"><h2 class="section">PROJEKTY I LISTY AKTYWACJI</h2>
+    <button class="primary" onclick="createProject()">＋ UTWÓRZ NOWY PROJEKT</button>
+    <div class="theme-note">Każdy projekt może mieć nazwę, locator i notatki telemetryczne. QSO zapisywane podczas aktywnego projektu będą do niego przypisane.</div>
+  </div>
   ${lists.length?lists.map(l=>`<div class="list-item">
     <div class="list-main"><b>${esc(l.name)}</b><span>${esc(l.type)}</span></div>
-    <div class="meta">📍 ${esc(l.location)} • ${esc(l.status)}</div>
+    <div class="meta">📍 Locator/lokalizacja: ${esc(l.locator||l.location||'Nie podano')} • ${esc(l.status)}</div>
+    ${l.telemetry?`<div class="meta">Dane telemetryczne: ${esc(l.telemetry)}</div>`:''}
     <div class="meta">QSO: ${qsos.filter(q=>q.listId===l.name).length}</div>
-    <div class="list-actions"><button onclick="activateList('${String(l.name).replace(/'/g,"\\'")}')">AKTYWUJ</button><button onclick="finishList(${l.id})">ZAKOŃCZ</button></div>
-    <div class="list-actions"><button onclick="deleteList(${l.id})">USUŃ LISTĘ</button><span class="theme-note">QSO pozostaną w logu</span></div>
-  </div>`).join(''):'<div class="empty">Brak list aktywacji.</div>'}
-  </div>`;
+    <div class="list-actions"><button onclick="activateListById(${l.id})">AKTYWUJ</button><button onclick="editProject(${l.id})">EDYTUJ PROJEKT</button></div>
+    <div class="list-actions"><button onclick="exportProjectADIF(${l.id})">EKSPORT ADIF PROJEKTU</button><button onclick="finishList(${l.id})">ZAKOŃCZ</button></div>
+    <div class="list-actions"><button onclick="deleteList(${l.id})">USUŃ PROJEKT</button><span class="theme-note">QSO pozostaną w logu</span></div>
+  </div>`).join(''):'<div class="empty">Brak projektów. Utwórz pierwszy projekt powyżej.</div>'}`;
 }
+function activateListById(id){const l=lists.find(x=>x.id===id);if(!l)return;settings.activeList=l.name;l.status='AKTYWNA';saveAll();toast('Aktywny projekt: '+l.name);renderHome();}
+function editProject(id){
+  const l=lists.find(x=>x.id===id);if(!l)return;
+  const name=prompt('Nazwa projektu:',l.name);if(!name||!name.trim())return;
+  const locator=prompt('Locator / lokalizacja:',l.locator||l.location||'')??(l.locator||'');
+  const telemetry=prompt('Dane telemetryczne / notatki:',l.telemetry||'')??(l.telemetry||'');
+  const oldName=l.name;l.name=name.trim();l.locator=locator.trim();l.location=l.locator||'Nie podano';l.telemetry=telemetry.trim();
+  if(settings.activeList===oldName)settings.activeList=l.name;
+  qsos.forEach(q=>{if(q.listId===oldName)q.listId=l.name;});saveAll();toast('Projekt zaktualizowany');showLists();
+}
+function exportProjectADIF(id){const l=lists.find(x=>x.id===id);if(!l)return;const records=qsos.filter(q=>q.listId===l.name);if(!records.length){toast('Ten projekt nie ma jeszcze QSO');return;}downloadADIF(records,safeFilename(l.name)+' .adi'.replace(' ',''),l);}
+function safeFilename(name){return String(name||'C-log').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,60)||'C-log';}
 function activateList(name){settings.activeList=name;saveAll();toast('Aktywna: '+name);setTimeout(renderHome,400);}
 function finishList(id){
   const l=lists.find(x=>x.id===id);if(!l)return;
@@ -573,17 +614,20 @@ function adifField(name,value){
 }
 function exportADIF(){
   if(!qsos.length){toast('Brak QSO do eksportu');return;}
-  const records=qsos.slice().reverse().map(q=>{
+  downloadADIF(qsos.slice().reverse(),'C-log-QSO.adi',null);
+}
+function downloadADIF(records,filename,project){
+  const data=records.slice().reverse().map(q=>{
     const d=(q.utc||new Date().toISOString()).replace(/[-:TZ.]/g,'').slice(0,14);
     const modeMap={'FM SAT':'FM','C4FM':'C4FM','SSB':'SSB','DMR':'DMR'};
     const mode=modeMap[q.mode]||q.mode||'FM';
     const freqMHz=String(q.freq||'').replace(',','.');
     const bandMap={'2200 m':'2200M','630 m':'630M','160 m':'160M','80 m':'80M','60 m':'60M','40 m':'40M','30 m':'30M','20 m':'20M','17 m':'17M','15 m':'15M','12 m':'12M','10 m':'10M','6 m':'6M','4 m':'4M','2 m':'2M','70 cm':'70CM','23 cm':'23CM','13 cm':'13CM','9 cm':'9CM','6 cm':'6CM','3 cm':'3CM','1.25 cm':'1.25CM','6 mm':'6MM'};
-    return adifField('CALL',q.callsign)+adifField('QSO_DATE',d.slice(0,8))+adifField('TIME_ON',d.slice(8,12))+adifField('BAND',bandMap[q.band]||q.band)+adifField('FREQ',freqMHz)+adifField('MODE',mode)+adifField('RST_RCVD',q.rx)+adifField('RST_SENT',q.tx)+adifField('TX_PWR',q.power)+adifField('NAME',q.name)+adifField('QTH',q.qth)+adifField('COMMENT',q.comment)+'<EOR>\n';
+    return adifField('CALL',q.callsign)+adifField('QSO_DATE',d.slice(0,8))+adifField('TIME_ON',d.slice(8,12))+adifField('BAND',bandMap[q.band]||q.band)+adifField('FREQ',freqMHz)+adifField('MODE',mode)+adifField('RST_RCVD',q.rx)+adifField('RST_SENT',q.tx)+adifField('TX_PWR',q.power)+adifField('NAME',q.name)+adifField('QTH',q.qth)+adifField('COMMENT',q.comment)+(project?adifField('MY_GRIDSQUARE',project.locator||project.location||'')+adifField('MY_SIG',project.type||'')+adifField('MY_SIG_INFO',[project.name||'',project.telemetry||''].filter(Boolean).join(' | ')):'')+'<EOR>\n';
   }).join('');
-  const blob=new Blob(['ADIF Export from C-log v0.15\n<ADIF_VER:5>3.1.4\n<PROGRAMID:5>C-log\n<EOH>\n',records],{type:'application/octet-stream'});
-  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='C-log-QSO.adi';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
-  toast('Plik ADIF przygotowany — wgraj go w QRZ Logbook');
+  const blob=new Blob([`ADIF Export from C-log v0.16\n<ADIF_VER:5>3.1.4\n<PROGRAMID:5>C-log\n<EOH>\n`,data],{type:'application/octet-stream'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  toast(project?'Eksport projektu przygotowany':'Plik ADIF przygotowany — wgraj go w QRZ Logbook');
 }
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800);}
 applyTheme();
