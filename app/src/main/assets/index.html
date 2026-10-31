@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#000000">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>C-log v0.18 testowa</title>
+<title>C-log v0.19 testowa</title>
 <style>
 :root{--bg:#000;--surface:#080808;--surface2:#111;--text:#fff;--muted:#bdbdbd;--line:#777;--accent:#ff2020;--accentText:#fff;--field:#050505;--danger:#ff3030}
 html[data-theme="light"]{--bg:#fff;--surface:#fff;--surface2:#f3f3f3;--text:#111;--muted:#555;--line:#777;--accent:#e51b23;--accentText:#fff;--field:#fff;--danger:#c9151c}
@@ -147,11 +147,12 @@ function contactDisplay(data){
   return [country?(flagForCountry(code)+' '+country):'',grid?'📍 '+grid:'',dist!==null?'↔ '+dist+' km':''].filter(Boolean).join(' • ');
 }
 async function getPhoneLocation(){
-  if(!navigator.geolocation) throw new Error('Ta wersja Android WebView nie udostępnia geolokalizacji. Wymagana jest obsługa uprawnień GPS w części Android.');
+  if(!window.isSecureContext && location.protocol!=='file:') throw new Error('Lokalizacja wymaga bezpiecznego kontekstu HTTPS.');
+  if(!navigator.geolocation) throw new Error('WebView nie udostępnia geolokalizacji. Wymagana jest obsługa GPS w Androidzie.');
   const request=opts=>new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,opts));
   try{return await request({enableHighAccuracy:true,timeout:25000,maximumAge:0});}
   catch(first){
-    if(first&&first.code===1) throw new Error('Brak zgody na lokalizację. Zezwól aplikacji C-log na dostęp do lokalizacji w ustawieniach Androida.');
+    if(first&&first.code===1) throw new Error('Android/WebView odmówił dostępu do GPS. Wymagana jest zgoda systemowa oraz obsługa żądania lokalizacji w MainActivity.');
     try{return await request({enableHighAccuracy:false,timeout:20000,maximumAge:120000});}
     catch(second){throw new Error(second&&second.code===2?'Telefon nie udostępnił pozycji. Włącz lokalizację/GPS i spróbuj ponownie.':second&&second.code===3?'Upłynął czas oczekiwania na GPS. Spróbuj na zewnątrz.':'Nie udało się pobrać pozycji telefonu.');}
   }
@@ -168,10 +169,15 @@ async function fillProjectFromPhone(project){
 }
 function saveContactCache(){
   const call=(document.getElementById('callsign')?.value||'').trim().toUpperCase();if(!call){toast('Najpierw wpisz znak');return;}
-  const data={name:document.getElementById('contactName')?.value.trim()||'',qth:document.getElementById('contactQth')?.value.trim()||'',grid:document.getElementById('contactGrid')?.value.trim().toUpperCase()||'',country:document.getElementById('contactCountry')?.value.trim()||'',countryCode:document.getElementById('contactCountryCode')?.value.trim().toUpperCase()||''};
+  const data={name:document.getElementById('contactName')?.value.trim()||'',qth:document.getElementById('contactQth')?.value.trim()||'',grid:(document.getElementById('contactGrid')?.value||'').trim().toUpperCase(),country:(document.getElementById('contactCountry')?.value||'').trim(),countryCode:(document.getElementById('contactCountryCode')?.value||'').trim().toUpperCase()};
   settings.contactCache[call]=data;saveAll();toast('Dane znaku zapisane w pamięci C-log');updateContactInfo(data);
 }
-function updateManualContactVisibility(){const box=document.getElementById('manualContactFields');if(!box)return;const call=(document.getElementById('callsign')?.value||'').trim().toUpperCase();const c=settings.contactCache[call];const hasGrid=!!(c&&c.grid),hasCountry=!!(c&&c.country);box.style.display=(hasGrid&&hasCountry)?'none':'block';}
+function updateManualContactVisibility(showMissing=true){
+  const fields=[['contactName','manualNameField'],['contactQth','manualQthField'],['contactGrid','manualGridField'],['contactCountry','manualCountryField']];
+  let anyVisible=false;
+  fields.forEach(([inputId,wrapId])=>{const input=document.getElementById(inputId),wrap=document.getElementById(wrapId);if(!input||!wrap)return;const missing=!input.value.trim();wrap.style.display=(showMissing&&missing)?'block':'none';if(showMissing&&missing)anyVisible=true;});
+  const box=document.getElementById('manualContactFields');if(box)box.style.display=anyVisible?'block':'none';
+}
 function updateContactInfo(data){const el=document.getElementById('callerInfo');if(el){const extra=contactDisplay(data||{});el.textContent=extra||'Dane korespondenta zapisane lokalnie.';}}
 function toggleProjectPicker(){const p=document.getElementById('projectPicker');if(p)p.style.display=p.style.display==='none'?'block':'none';}
 function toggleUtcClock(){
@@ -350,13 +356,13 @@ function renderHome(editId=null){
       <input id="callsign" class="call" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="SP3ABC" value="${esc(rememberedCall)}" oninput="callChanged()">
       <div id="callerInfo" class="small-info">${t(t('Dane korespondenta pojawią się tutaj.','Contact details will appear here.'),'Contact details will appear here.')}</div>
       <div class="row" style="margin-top:8px">
-        <div><label>${t("Imię","Name")}</label><input id="contactName" autocomplete="off" placeholder="${t('Imię korespondenta','Contact name')}" value="${esc(rememberedName)}"></div>
-        <div><label>QTH</label><input id="contactQth" autocomplete="off" placeholder="${t('Miejscowość','Town / QTH')}" value="${esc(rememberedQth)}"></div>
+        <div id="manualNameField" style="display:none"><label>${t("Imię","Name")}</label><input id="contactName" autocomplete="off" placeholder="${t('Imię korespondenta','Contact name')}" value="${esc(rememberedName)}"></div>
+        <div id="manualQthField" style="display:none"><label>QTH</label><input id="contactQth" autocomplete="off" placeholder="${t('Miejscowość','Town / QTH')}" value="${esc(rememberedQth)}"></div>
       </div>
-      <div id="manualContactFields" style="display:none;margin-top:8px">
+      <div id="manualContactFields" style="margin-top:8px">
         <div class="row">
-          <div><label>${t("Locator","Grid locator")}</label><input id="contactGrid" placeholder="JO82XX" maxlength="6"></div>
-          <div><label>${t("Kraj","Country")}</label><input id="contactCountry" placeholder="${t("Kraj","Country")}"></div>
+          <div id="manualGridField" style="display:none"><label>${t("Locator","Grid locator")}</label><input id="contactGrid" placeholder="JO82XX" maxlength="6"></div>
+          <div id="manualCountryField" style="display:none"><label>${t("Kraj","Country")}</label><input id="contactCountry" placeholder="${t("Kraj","Country")}"></div>
         </div>
         <div style="margin-top:8px"><button type="button" onclick="saveContactCache()" style="width:100%;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--text);font-weight:700">${t("ZAPISZ DANE ZNAKU","SAVE CALLSIGN DATA")}</button></div>
       </div>
@@ -401,13 +407,14 @@ function renderHome(editId=null){
   const call=document.getElementById('callsign'), rx=document.getElementById('rx'), tx=document.getElementById('tx');
   call.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupCallsign().finally(()=>rx.focus());}});
   call.addEventListener('blur',()=>{ if(call.value.trim()) lookupCallsign(); });
-  ['contactGrid','contactCountry','contactCountryCode'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{const data={grid:document.getElementById('contactGrid').value,country:document.getElementById('contactCountry').value,countryCode:document.getElementById('contactCountryCode').value};updateContactInfo(data);}));
+  ['contactName','contactQth','contactGrid','contactCountry'].forEach(id=>{const field=document.getElementById(id);if(field)field.addEventListener('input',()=>{const grid=document.getElementById('contactGrid'),country=document.getElementById('contactCountry');updateContactInfo({grid:grid?grid.value:'',country:country?country.value:'',countryCode:(settings.contactCache[call.value.trim().toUpperCase()]||{}).countryCode||''});});});
   updateManualContactVisibility();
   rx.addEventListener('input',()=>{if(rx.value.length>=2)tx.focus();});
   rx.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();tx.focus();}});
   tx.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('comment').focus();}});
   if(rememberedCall){const cached=settings.contactCache[rememberedCall];if(cached){['contactName','contactQth','contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[cached.name,cached.qth,cached.grid,cached.country,cached.countryCode][i];if(el&&v)el.value=v;});updateContactInfo(cached);}else{const old=qsos.find(q=>q.callsign===rememberedCall);if(old)document.getElementById('callerInfo').textContent='Dane lokalne zachowane; po Enter kursor przejdzie do raportu RX.';}}
   if(editing)document.getElementById('callerInfo').textContent='Edytujesz zapisane QSO. Zapisz zmiany, aby zaktualizować wpis.';
+  updateManualContactVisibility(!!rememberedCall);
 
 }
 function applyCommentTemplate(i){const el=document.getElementById('comment');if(!el)return;const v=settings.commentTemplates[i]||'';if(!v)return;el.value=v;el.focus();el.setSelectionRange(el.value.length,el.value.length);}
@@ -421,15 +428,16 @@ function callChanged(){
   const info=document.getElementById('callerInfo');
   if(!c){info.textContent='Wpisz znak korespondenta.';return;}
   const cached=settings.contactCache[c];
-  if(cached){['contactName','contactQth','contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[cached.name,cached.qth,cached.grid,cached.country,cached.countryCode][i];if(el&&v)el.value=v;});updateContactInfo(cached);updateManualContactVisibility();return;}
+  if(cached){['contactName','contactQth','contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[cached.name,cached.qth,cached.grid,cached.country,cached.countryCode][i];if(el&&v)el.value=v;});updateContactInfo(cached);updateManualContactVisibility(true);return;}
   const old=qsos.find(q=>q.callsign===c);
   if(old){
     info.textContent='Znaleziono wcześniejszą łączność. Sprawdź lub popraw dane korespondenta.';
     const name=document.getElementById('contactName'), qth=document.getElementById('contactQth');
     if(name && !name.value) name.value=old.name||'';
     if(qth && !qth.value) qth.value=old.qth||'';
+    updateManualContactVisibility(true);
   } else {
-    info.textContent='Brak pełnych danych automatycznych. Uzupełnij brakujące pola poniżej; możesz zapisać je w pamięci.';updateManualContactVisibility();
+    info.textContent='Brak danych z QRZ. Możesz uzupełnić brakujące informacje ręcznie.';updateManualContactVisibility(true);
   }
 }
 
@@ -469,7 +477,7 @@ function actuallySave(f,band){
     date:t.toISOString().slice(0,10),utc:t.toISOString(),listId:settings.activeList||null
   };
   qsos.unshift(q);
-  settings.contactCache[f.callsign]={...(settings.contactCache[f.callsign]||{}),name:f.name,qth:f.qth,grid:document.getElementById('contactGrid')?.value.trim().toUpperCase()||'',country:document.getElementById('contactCountry')?.value.trim()||'',countryCode:document.getElementById('contactCountryCode')?.value.trim().toUpperCase()||''};
+  settings.contactCache[f.callsign]={...(settings.contactCache[f.callsign]||{}),name:f.name,qth:f.qth,grid:(document.getElementById('contactGrid')?.value||'').trim().toUpperCase(),country:(document.getElementById('contactCountry')?.value||'').trim(),countryCode:(document.getElementById('contactCountryCode')?.value||'').trim().toUpperCase()};
   settings.freq=String(f.freq).replace(/,/g,'');settings.mode=f.mode;settings.power=f.power;settings.lastCallsign=f.callsign;settings.lastName=f.name;settings.lastQth=f.qth;
   saveAll();
   toast('✓ QSO ZAPISANE');
@@ -502,7 +510,7 @@ function showQSOList(){
   <div class="card"><h2 class="section">LISTA QSO</h2><input id="search" placeholder="🔍 Szukaj callsign / pasmo" oninput="renderItems()">
     <div class="list-actions"><button onclick="selectVisibleQSO(true)">ZAZNACZ WIDOCZNE</button><button onclick="selectVisibleQSO(false)">ODZNACZ</button></div>
     <div class="list-actions"><button onclick="deleteSelectedQSO()">USUŃ ZAZNACZONE</button><button id="deleteLog" style="background:var(--danger);color:#fff;border-color:var(--danger)" onclick="deleteEntireLog()">USUŃ LOG</button></div>
-    <div class="theme-note">Usunięcie jest trwałe. Przytrzymaj czerwony przycisk przez 1 sekundę, aby usunąć wszystkie QSO.</div>
+    <div class="theme-note">Usunięcie jest trwałe. Kliknij USUŃ LOG i potwierdź, aby usunąć wszystkie QSO.</div>
   </div>
   <div id="items"></div>`;
   renderItems();
@@ -545,7 +553,7 @@ function showSpecial(){
     <button onclick="showSatSplit()">🛰 SAT / ISS – SPLIT</button>
     <button class="${active('POTA')?'on':''}" onclick="newList('POTA')">🌲 POTA</button>
     <button class="${active('SOTA')?'on':''}" onclick="newList('SOTA')">⛰ SOTA</button>
-    <button class="${active('IOTA')?'on':''}" onclick="newList('IOTA')">🌊 IOTA</button>
+    <button class="${active('LLOTA')?'on':''}" onclick="newList('LLOTA')">🌊 LLOTA</button>
     <button class="${active('WWFF')?'on':''}" onclick="newList('WWFF')">🌳 WWFF</button>
     <button onclick="showLists()">📋 PROJEKTY / LISTY</button>
     <button onclick="createProject()">＋ NOWY PROJEKT</button>
@@ -579,14 +587,14 @@ async function lookupCallsign(){
   const call=(document.getElementById('callsign')?.value||'').trim().toUpperCase();
   const info=document.getElementById('callerInfo');
   if(!call)return;
-  const cached=settings.contactCache[call];if(cached){['contactName','contactQth','contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[cached.name,cached.qth,cached.grid,cached.country,cached.countryCode][i];if(el&&v)el.value=v;});updateContactInfo(cached);updateManualContactVisibility();return;}
-  if(!settings.qrzLookupUrl)return;
+  const cached=settings.contactCache[call];if(cached){['contactName','contactQth','contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[cached.name,cached.qth,cached.grid,cached.country,cached.countryCode][i];if(el&&v)el.value=v;});updateContactInfo(cached);updateManualContactVisibility(true);return;}
+  if(!settings.qrzLookupUrl){updateManualContactVisibility(true);return;}
   const old=qsos.find(q=>q.callsign===call);
   if(old){
     const name=document.getElementById('contactName'),qth=document.getElementById('contactQth');
     if(name&&!name.value)name.value=old.name||'';if(qth&&!qth.value)qth.value=old.qth||'';
   }
-  info.textContent='Sprawdzam dane korespondenta…';
+  info.textContent='Sprawdzam dane korespondenta…';updateManualContactVisibility(false);
   try{
     const url=new URL(settings.qrzLookupUrl);url.searchParams.set('callsign',call);
     const response=await fetch(url.toString(),{method:'GET',headers:{'Accept':'application/json'}});
@@ -598,9 +606,9 @@ async function lookupCallsign(){
     if(qthEl&&data.qth)qthEl.value=data.qth;
     const contact={name:data.name||'',qth:data.qth||'',grid:data.grid||data.locator||'',country:data.country||data.countryName||'',countryCode:data.countryCode||data.country_code||''};
     ['contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[contact.grid,contact.country,contact.countryCode][i];if(el&&v)el.value=v;});
-    if(contact.name||contact.qth||contact.grid||contact.country)settings.contactCache[call]=contact;saveAll();updateContactInfo(contact);
+    if(contact.name||contact.qth||contact.grid||contact.country)settings.contactCache[call]=contact;saveAll();updateContactInfo(contact);updateManualContactVisibility(true);
   }catch(e){
-    info.textContent='Lookup niedostępny: '+(e.message||'błąd połączenia')+'. Możesz wpisać dane ręcznie.';
+    info.textContent='Lookup niedostępny: '+(e.message||'błąd połączenia')+'. Możesz wpisać dane ręcznie.';updateManualContactVisibility(true);
   }
 }
 async function testQRZLookup(){
@@ -651,7 +659,7 @@ function applySatSplit(){
 function createProject(type='PROJEKT'){
   const name=prompt('Nazwa projektu / aktywacji (możesz ją później zmienić):',type==='PROJEKT'?'POTA-PL-XXXX':'PL-XXXX');
   if(!name||!name.trim())return;
-  const projectType=type==='PROJEKT'?(prompt('Typ projektu: POTA, SOTA, IOTA, WWFF lub INNE','POTA')||'POTA').toUpperCase():type;
+  const projectType=type==='PROJEKT'?(prompt('Typ projektu: POTA, SOTA, LLOTA, WWFF lub INNE','POTA')||'POTA').toUpperCase():type;
   const id=Date.now();
   const project={id,name:name.trim(),type:projectType,location:'Nie podano',locator:'',telemetry:'',start:new Date().toISOString(),status:'AKTYWNA'};
   lists.unshift(project);settings.activeList=project.name;saveAll();
