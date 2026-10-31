@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#000000">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>C-log v0.16 testowa</title>
+<title>C-log v0.17 testowa</title>
 <style>
 :root{--bg:#000;--surface:#080808;--surface2:#111;--text:#fff;--muted:#bdbdbd;--line:#777;--accent:#ff2020;--accentText:#fff;--field:#050505;--danger:#ff3030}
 html[data-theme="light"]{--bg:#fff;--surface:#fff;--surface2:#f3f3f3;--text:#111;--muted:#555;--line:#777;--accent:#e51b23;--accentText:#fff;--field:#fff;--danger:#c9151c}
@@ -101,13 +101,80 @@ let selectedQsoIds=new Set(); let holdDeleteTimer=null; let holdDeleteFired=fals
 let qsos=JSON.parse(localStorage.getItem(KEY)||'[]');
 let lists=JSON.parse(localStorage.getItem(LISTKEY)||'[]');
 let settings=JSON.parse(localStorage.getItem(SETTINGS)||JSON.stringify({
-  freq:'145.600', mode:'FM', power:'10', rx:'', tx:'', activeList:null, theme:'dark'
+  freq:'145.600', mode:'FM', power:'10', rx:'', tx:'', activeList:null, theme:'dark', utcRunning:true, homeLocator:'', lang:'pl', contactCache:{}
 }));
 if(!Array.isArray(settings.commentTemplates)) settings.commentTemplates=['POTA aktywacja','SOTA aktywacja','Praca przez przemiennik','Łączność bezpośrednia','Praca przez ISS','Dziękuję za QSO'];
 while(settings.commentTemplates.length<6) settings.commentTemplates.push('');
 settings.commentTemplates=settings.commentTemplates.slice(0,6);
+if(typeof settings.utcRunning!=='boolean') settings.utcRunning=true;
+if(!settings.contactCache||typeof settings.contactCache!=='object') settings.contactCache={};
+if(!settings.lang) settings.lang='pl';
 
 
+function flagForCountry(code){
+  const c=String(code||'').trim().toUpperCase();
+  if(!/^[A-Z]{2}$/.test(c))return '';
+  return String.fromCodePoint(...[...c].map(x=>127397+x.charCodeAt(0)));
+}
+function locatorToLatLon(locator){
+  const g=String(locator||'').trim().toUpperCase();
+  if(g.length<4||g.length>6||!/^[A-R]{2}[0-9]{2}([A-X]{2})?$/.test(g))return null;
+  let lon=-180+(g.charCodeAt(0)-65)*20+(Number(g[2]))*2;
+  let lat=-90 +(g.charCodeAt(1)-65)*10+(Number(g[3]));
+  if(g.length>=6){lon+=(g.charCodeAt(4)-65)*(5/60);lat+=(g.charCodeAt(5)-65)*(2.5/60);lon+=2.5/60;lat+=1.25/60;}
+  else {lon+=1;lat+=0.5;}
+  return {lat,lon};
+}
+function latLonToLocator(lat,lon){
+  lon=Math.max(-180,Math.min(179.999999,lon));lat=Math.max(-90,Math.min(89.999999,lat));
+  let x=lon+180,y=lat+90;let out='';
+  const a=Math.floor(x/20),b=Math.floor(y/10);out+=String.fromCharCode(65+a,65+b);x-=a*20;y-=b*10;
+  const c=Math.floor(x/2),d=Math.floor(y);out+=String(c)+String(d);x-=c*2;y-=d;
+  const e=Math.floor(x/(5/60)),f=Math.floor(y/(2.5/60));out+=String.fromCharCode(65+e,65+f);
+  return out;
+}
+function distanceKm(gridA,gridB){
+  const a=locatorToLatLon(gridA),b=locatorToLatLon(gridB);if(!a||!b)return null;
+  const r=6371,rad=v=>v*Math.PI/180,dl=rad(b.lat-a.lat),dn=rad(b.lon-a.lon);
+  const h=Math.sin(dl/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dn/2)**2;
+  return Math.round(2*r*Math.asin(Math.sqrt(h)));
+}
+function contactDisplay(data){
+  const code=data.countryCode||data.country_code||'';const country=data.country||data.countryName||'';const grid=data.grid||data.locator||'';
+  const home=document.getElementById('contactHomeLocator')?.value.trim()||settings.homeLocator||'';
+  const dist=home&&grid?distanceKm(home,grid):null;
+  return [country?(flagForCountry(code)+' '+country):'',grid?'📍 '+grid:'',dist!==null?'↔ '+dist+' km':''].filter(Boolean).join(' • ');
+}
+async function getPhoneLocation(){
+  return new Promise((resolve,reject)=>{
+    if(!navigator.geolocation){reject(new Error('Geolokalizacja niedostępna w tej wersji aplikacji'));return;}
+    navigator.geolocation.getCurrentPosition(pos=>resolve(pos),err=>reject(err),{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+  });
+}
+async function fillProjectFromPhone(project){
+  try{
+    const pos=await getPhoneLocation(),c=pos.coords;
+    const grid=latLonToLocator(c.latitude,c.longitude);
+    project.locator=grid;project.location=grid;
+    project.latitude=c.latitude;project.longitude=c.longitude;
+    project.telemetry=[`GPS ${c.latitude.toFixed(5)}, ${c.longitude.toFixed(5)}`,`dokładność ±${Math.round(c.accuracy)} m`,c.altitude!==null?`wysokość ${Math.round(c.altitude)} m n.p.m.`:'',`czas ${new Date(pos.timestamp).toISOString()}`].filter(Boolean).join(' | ');
+    saveAll();toast('Pobrano lokalizację: '+grid);showLists();
+  }catch(e){toast('Nie udało się pobrać lokalizacji. Wpisz locator ręcznie.');}
+}
+function saveContactCache(){
+  const call=(document.getElementById('callsign')?.value||'').trim().toUpperCase();if(!call){toast('Najpierw wpisz znak');return;}
+  const data={name:document.getElementById('contactName')?.value.trim()||'',qth:document.getElementById('contactQth')?.value.trim()||'',grid:document.getElementById('contactGrid')?.value.trim().toUpperCase()||'',country:document.getElementById('contactCountry')?.value.trim()||'',countryCode:document.getElementById('contactCountryCode')?.value.trim().toUpperCase()||''};
+  settings.contactCache[call]=data;saveAll();toast('Dane znaku zapisane w pamięci C-log');updateContactInfo(data);
+}
+function updateContactInfo(data){const el=document.getElementById('callerInfo');if(el){const extra=contactDisplay(data||{});el.textContent=extra||'Dane korespondenta zapisane lokalnie.';}}
+function toggleUtcClock(){
+  settings.utcRunning=!settings.utcRunning;
+  const el=document.getElementById('qsoUtc');
+  if(settings.utcRunning){if(el){el.value=utcInputValue();el.dataset.edited='0';}toast('Czas UTC uruchomiony');}
+  else {if(el)el.dataset.edited='1';toast('Czas UTC zatrzymany');}
+  saveAll();const b=document.getElementById('utcToggle');if(b)b.textContent=settings.utcRunning?'STOP UTC':'START UTC';
+}
+function t(pl,en){return settings.lang==='en'?en:pl;}
 function applyTheme(){
   const theme=settings.theme||'dark';
   document.documentElement.setAttribute('data-theme',theme);
@@ -119,6 +186,7 @@ function showSettings(){
     <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
     <div class="card">
       <h2 class="section">USTAWIENIA</h2>
+      <div class="list-item"><b>JĘZYK / LANGUAGE</b><div class="theme-note">Wybór języka jest zapamiętywany. Pełne tłumaczenie wszystkich ekranów będzie wdrażane etapami.</div><select id="languageSelect" onchange="settings.lang=this.value;saveAll();showSettings()"><option value="pl" ${settings.lang==='pl'?'selected':''}>Polski</option><option value="en" ${settings.lang==='en'?'selected':''}>English</option></select><label style="margin-top:8px">Mój locator / My grid locator</label><input id="homeLocatorSetting" value="${esc(settings.homeLocator||'')}" placeholder="JO82XX" maxlength="6"><button style="width:100%;margin-top:8px" onclick="settings.homeLocator=(document.getElementById('homeLocatorSetting')?.value||'').trim().toUpperCase();saveAll();toast('Zapisano locator stacji')">ZAPISZ LOCATOR</button></div>
       <div class="list-item">
         <b>WYGLĄD</b>
         <div class="theme-note">Domyślnie: czarne tło i biała czcionka. Wybierz wygląd aplikacji.</div>
@@ -260,51 +328,59 @@ function renderHome(editId=null){
     ${settings.activeList?`<div class="active-badges"><span class="badge">● ${esc(settings.activeList)}</span></div>`:''}
     <div class="card">
       <div class="row">
-        <div><label>Pasmo</label><div id="band" class="band-value">${esc(editing?.band||bandFromFreq(formFreq)||'—')}</div></div>
-        <div class="freq"><label>Częstotliwość</label><input id="freq" inputmode="decimal" value="${esc(formFreq)}" oninput="sanitizeFrequency(this);updateBand()" onblur="formatFrequencyOnBlur(this);updateBand()" onkeydown="blockFrequencyComma(event)"></div>
+        <div><label>${t("Pasmo","Band")}</label><div id="band" class="band-value">${esc(editing?.band||bandFromFreq(formFreq)||'—')}</div></div>
+        <div class="freq"><label>${t("Częstotliwość","Frequency")}</label><input id="freq" inputmode="decimal" value="${esc(formFreq)}" oninput="sanitizeFrequency(this);updateBand()" onblur="formatFrequencyOnBlur(this);updateBand()" onkeydown="blockFrequencyComma(event)"></div>
       </div>
       <div style="height:10px"></div>
       <div class="row">
-        <div><label>Mode</label><select id="mode"><option>AM</option><option>SSB</option><option>DMR</option><option>FM</option><option>C4FM</option><option>CW</option><option>FT8</option><option>FT4</option><option>FM SAT</option></select></div>
-        <div><label>Moc</label><input id="power" inputmode="decimal" value="${esc(formPower)}" placeholder="10"></div>
+        <div><label>${t("Mode","Mode")}</label><select id="mode"><option>AM</option><option>SSB</option><option>DMR</option><option>FM</option><option>C4FM</option><option>CW</option><option>FT8</option><option>FT4</option><option>FM SAT</option></select></div>
+        <div><label>${t("Moc","Power")}</label><input id="power" inputmode="decimal" value="${esc(formPower)}" placeholder="10"></div>
       </div>
     </div>
 
     <div class="card">
-      <label>Callsign</label>
+      <label>${t("Callsign","Callsign")}</label>
       <input id="callsign" class="call" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="SP3ABC" value="${esc(rememberedCall)}" oninput="callChanged()">
       <div id="callerInfo" class="small-info">Dane korespondenta pojawią się tutaj.</div>
       <div class="row" style="margin-top:8px">
-        <div><label>Imię</label><input id="contactName" autocomplete="off" placeholder="Imię korespondenta" value="${esc(rememberedName)}"></div>
-        <div><label>QTH</label><input id="contactQth" autocomplete="off" placeholder="Miejscowość / locator" value="${esc(rememberedQth)}"></div>
+        <div><label>${t("Imię","Name")}</label><input id="contactName" autocomplete="off" placeholder="Imię korespondenta" value="${esc(rememberedName)}"></div>
+        <div><label>QTH</label><input id="contactQth" autocomplete="off" placeholder="Miejscowość" value="${esc(rememberedQth)}"></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div><label>Locator korespondenta</label><input id="contactGrid" placeholder="JO82XX" maxlength="6"></div>
+        <div><label>Kraj</label><input id="contactCountry" placeholder="Kraj"></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div><label>Kod kraju (np. DE)</label><input id="contactCountryCode" placeholder="PL" maxlength="2"></div>
+        <div style="display:flex;align-items:end"><button type="button" onclick="saveContactCache()" style="width:100%;min-height:46px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--text);font-weight:700">ZAPISZ DANE ZNAKU</button></div>
       </div>
     </div>
 
     <div class="card">
       <div class="reports">
         <div class="report">
-          <div class="report-title">RAPORT RX</div>
+          <div class="report-title">${t("RAPORT RX","REPORT RX")}</div>
           <input id="rx" inputmode="numeric" placeholder="59" onfocus="this.placeholder=''">
           <div class="quick"><button onclick="quickReport('rx','58')">58</button><button onclick="quickReport('rx','57')">57</button><button onclick="quickReport('rx','55')">55</button></div>
         </div>
         <div class="report">
-          <div class="report-title">RAPORT TX</div>
+          <div class="report-title">${t("RAPORT TX","REPORT TX")}</div>
           <input id="tx" inputmode="numeric" placeholder="59" onfocus="this.placeholder=''">
           <div class="quick"><button onclick="quickReport('tx','58')">58</button><button onclick="quickReport('tx','57')">57</button><button onclick="quickReport('tx','55')">55</button></div>
         </div>
       </div>
       <div style="height:10px"></div>
       <div class="row" style="margin-bottom:8px">
-        <div><label>Data i czas QSO (UTC)</label><input id="qsoUtc" type="datetime-local" value="${utcInputValue()}" oninput="this.dataset.edited='1'"></div>
-        <div style="display:flex;align-items:end"><button type="button" class="back-button" style="width:100%;min-height:46px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--text);font-weight:700" onclick="setUtcNow()">TERAZ UTC</button></div>
+        <div><label>${t("Data i czas QSO (UTC)","QSO date and time (UTC)")}</label><input id="qsoUtc" type="datetime-local" value="${utcInputValue()}" oninput="this.dataset.edited='1'"></div>
+        <div style="display:flex;align-items:end"><button type="button" class="back-button" style="width:100%;min-height:46px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--text);font-weight:700" id="utcToggle" onclick="toggleUtcClock()">${settings.utcRunning===false?'START UTC':'STOP UTC'}</button></div>
       </div>
-      <label>Komentarz (wybierz szablon lub wpisz własny)</label>
+      <label>${t("Komentarz (wybierz szablon lub wpisz własny)","Comment (choose a template or enter your own)")}</label>
       <div class="comment-templates">${settings.commentTemplates.map((v,i)=>v?`<button type="button" onclick="applyCommentTemplate(${i})">${esc(v.length>18?v.slice(0,18)+'…':v)}</button>`:'').join('')}</div>
       <textarea id="comment" placeholder="Wybierz szablon powyżej albo wpisz własny komentarz">${esc(editing?.comment||'')}</textarea>
     </div>
 
-    <button class="primary" onclick="saveQSO()">${editing?'ZAPISZ ZMIANY':'ZAPISZ QSO'}</button>
-    <button type="button" onclick="clearCurrentEntry()" style="width:100%;min-height:48px;margin-top:8px;border:1px solid var(--line);border-radius:9px;background:var(--surface2);color:var(--text);font-weight:800">WYCZYŚĆ WPIS</button>
+    <button class="primary" onclick="saveQSO()">${editing?(settings.lang==='en'?'SAVE CHANGES':'ZAPISZ ZMIANY'):t('ZAPISZ QSO','SAVE QSO')}</button>
+    <button type="button" onclick="clearCurrentEntry()" style="width:100%;min-height:48px;margin-top:8px;border:1px solid var(--line);border-radius:9px;background:var(--surface2);color:var(--text);font-weight:800">${t("WYCZYŚĆ WPIS","CLEAR ENTRY")}</button>
 
     <div class="nav">
       <button onclick="showQSOList()">QSO</button>
@@ -319,10 +395,11 @@ function renderHome(editId=null){
   const call=document.getElementById('callsign'), rx=document.getElementById('rx'), tx=document.getElementById('tx');
   call.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupCallsign().finally(()=>rx.focus());}});
   call.addEventListener('blur',()=>{ if(call.value.trim()) lookupCallsign(); });
+  ['contactGrid','contactCountry','contactCountryCode'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{const data={grid:document.getElementById('contactGrid').value,country:document.getElementById('contactCountry').value,countryCode:document.getElementById('contactCountryCode').value};updateContactInfo(data);}));
   rx.addEventListener('input',()=>{if(rx.value.length>=2)tx.focus();});
   rx.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();tx.focus();}});
   tx.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('comment').focus();}});
-  if(rememberedCall){const old=qsos.find(q=>q.callsign===rememberedCall);if(old)document.getElementById('callerInfo').textContent='Dane lokalne zachowane; po Enter kursor przejdzie do raportu RX.';}
+  if(rememberedCall){const cached=settings.contactCache[rememberedCall];if(cached){['contactName','contactQth','contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[cached.name,cached.qth,cached.grid,cached.country,cached.countryCode][i];if(el&&v)el.value=v;});updateContactInfo(cached);}else{const old=qsos.find(q=>q.callsign===rememberedCall);if(old)document.getElementById('callerInfo').textContent='Dane lokalne zachowane; po Enter kursor przejdzie do raportu RX.';}}
   if(editing)document.getElementById('callerInfo').textContent='Edytujesz zapisane QSO. Zapisz zmiany, aby zaktualizować wpis.';
 
 }
@@ -336,6 +413,8 @@ function callChanged(){
   const c=el.value.trim();
   const info=document.getElementById('callerInfo');
   if(!c){info.textContent='Wpisz znak korespondenta.';return;}
+  const cached=settings.contactCache[c];
+  if(cached){['contactName','contactQth','contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[cached.name,cached.qth,cached.grid,cached.country,cached.countryCode][i];if(el&&v)el.value=v;});updateContactInfo(cached);return;}
   const old=qsos.find(q=>q.callsign===c);
   if(old){
     info.textContent='Znaleziono wcześniejszą łączność. Sprawdź lub popraw dane korespondenta.';
@@ -383,6 +462,7 @@ function actuallySave(f,band){
     date:t.toISOString().slice(0,10),utc:t.toISOString(),listId:settings.activeList||null
   };
   qsos.unshift(q);
+  settings.contactCache[f.callsign]={...(settings.contactCache[f.callsign]||{}),name:f.name,qth:f.qth,grid:document.getElementById('contactGrid')?.value.trim().toUpperCase()||'',country:document.getElementById('contactCountry')?.value.trim()||'',countryCode:document.getElementById('contactCountryCode')?.value.trim().toUpperCase()||''};
   settings.freq=String(f.freq).replace(/,/g,'');settings.mode=f.mode;settings.power=f.power;settings.lastCallsign=f.callsign;settings.lastName=f.name;settings.lastQth=f.qth;
   saveAll();
   toast('✓ QSO ZAPISANE');
@@ -490,7 +570,9 @@ function saveQRZSettings(){
 async function lookupCallsign(){
   const call=(document.getElementById('callsign')?.value||'').trim().toUpperCase();
   const info=document.getElementById('callerInfo');
-  if(!call||!settings.qrzLookupUrl)return;
+  if(!call)return;
+  const cached=settings.contactCache[call];if(cached){['contactName','contactQth','contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[cached.name,cached.qth,cached.grid,cached.country,cached.countryCode][i];if(el&&v)el.value=v;});updateContactInfo(cached);return;}
+  if(!settings.qrzLookupUrl)return;
   const old=qsos.find(q=>q.callsign===call);
   if(old){
     const name=document.getElementById('contactName'),qth=document.getElementById('contactQth');
@@ -505,8 +587,10 @@ async function lookupCallsign(){
     if(data.error)throw new Error(data.error);
     const nameEl=document.getElementById('contactName'),qthEl=document.getElementById('contactQth');
     if(nameEl&&data.name)nameEl.value=data.name;
-    if(qthEl&&(data.qth||data.grid))qthEl.value=[data.qth,data.grid].filter(Boolean).join(' / ');
-    info.textContent=(data.name||data.qth||data.grid)?'Dane pobrane z QRZ. Sprawdź je przed zapisem.':'Brak danych dla tego znaku.';
+    if(qthEl&&data.qth)qthEl.value=data.qth;
+    const contact={name:data.name||'',qth:data.qth||'',grid:data.grid||data.locator||'',country:data.country||data.countryName||'',countryCode:data.countryCode||data.country_code||''};
+    ['contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[contact.grid,contact.country,contact.countryCode][i];if(el&&v)el.value=v;});
+    if(contact.name||contact.qth||contact.grid||contact.country)settings.contactCache[call]=contact;saveAll();updateContactInfo(contact);
   }catch(e){
     info.textContent='Lookup niedostępny: '+(e.message||'błąd połączenia')+'. Możesz wpisać dane ręcznie.';
   }
@@ -559,12 +643,16 @@ function applySatSplit(){
 function createProject(type='PROJEKT'){
   const name=prompt('Nazwa projektu / aktywacji (możesz ją później zmienić):',type==='PROJEKT'?'POTA-PL-XXXX':'PL-XXXX');
   if(!name||!name.trim())return;
-  const locator=prompt('Locator stacji lub miejsca (np. JO82XX):','')||'';
-  const telemetry=prompt('Dane telemetryczne / dodatkowe dane projektu (opcjonalnie):','')||'';
   const projectType=type==='PROJEKT'?(prompt('Typ projektu: POTA, SOTA, IOTA, WWFF lub INNE','POTA')||'POTA').toUpperCase():type;
   const id=Date.now();
-  lists.unshift({id,name:name.trim(),type:projectType,location:locator.trim()||'Nie podano',locator:locator.trim(),telemetry:telemetry.trim(),start:new Date().toISOString(),status:'AKTYWNA'});
-  settings.activeList=name.trim();saveAll();toast('Projekt utworzony i aktywny');setTimeout(renderHome,350);
+  const project={id,name:name.trim(),type:projectType,location:'Nie podano',locator:'',telemetry:'',start:new Date().toISOString(),status:'AKTYWNA'};
+  lists.unshift(project);settings.activeList=project.name;saveAll();
+  const useGps=confirm('Czy pobrać lokalizację telefonu? C-log wyznaczy locator Maidenhead (np. JO82JE) i zapisze dostępne dane GPS: współrzędne, dokładność, wysokość i czas.');
+  if(useGps){fillProjectFromPhone(project);}else{
+    const locator=prompt('Wpisz locator stacji lub miejsca (np. JO82JE):',settings.homeLocator||'')||'';
+    const telemetry=prompt('Dodatkowe dane telemetryczne / notatki projektu (opcjonalnie):','')||'';
+    project.locator=locator.trim().toUpperCase();project.location=project.locator||'Nie podano';project.telemetry=telemetry.trim();saveAll();toast('Projekt utworzony i aktywny');setTimeout(renderHome,350);
+  }
 }
 function newList(type){createProject(type);}
 function showLists(){
@@ -625,13 +713,13 @@ function downloadADIF(records,filename,project){
     const bandMap={'2200 m':'2200M','630 m':'630M','160 m':'160M','80 m':'80M','60 m':'60M','40 m':'40M','30 m':'30M','20 m':'20M','17 m':'17M','15 m':'15M','12 m':'12M','10 m':'10M','6 m':'6M','4 m':'4M','2 m':'2M','70 cm':'70CM','23 cm':'23CM','13 cm':'13CM','9 cm':'9CM','6 cm':'6CM','3 cm':'3CM','1.25 cm':'1.25CM','6 mm':'6MM'};
     return adifField('CALL',q.callsign)+adifField('QSO_DATE',d.slice(0,8))+adifField('TIME_ON',d.slice(8,12))+adifField('BAND',bandMap[q.band]||q.band)+adifField('FREQ',freqMHz)+adifField('MODE',mode)+adifField('RST_RCVD',q.rx)+adifField('RST_SENT',q.tx)+adifField('TX_PWR',q.power)+adifField('NAME',q.name)+adifField('QTH',q.qth)+adifField('COMMENT',q.comment)+(project?adifField('MY_GRIDSQUARE',project.locator||project.location||'')+adifField('MY_SIG',project.type||'')+adifField('MY_SIG_INFO',[project.name||'',project.telemetry||''].filter(Boolean).join(' | ')):'')+'<EOR>\n';
   }).join('');
-  const blob=new Blob([`ADIF Export from C-log v0.16\n<ADIF_VER:5>3.1.4\n<PROGRAMID:5>C-log\n<EOH>\n`,data],{type:'application/octet-stream'});
+  const blob=new Blob([`ADIF Export from C-log v0.17\n<ADIF_VER:5>3.1.4\n<PROGRAMID:5>C-log\n<EOH>\n`,data],{type:'application/octet-stream'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
   toast(project?'Eksport projektu przygotowany':'Plik ADIF przygotowany — wgraj go w QRZ Logbook');
 }
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',1800);}
 applyTheme();
-setInterval(()=>{document.getElementById('clock').textContent=nowUTC();const utc=document.getElementById('qsoUtc');if(utc&&utc.dataset.edited!=='1')utc.value=utcInputValue();},1000);
+setInterval(()=>{document.getElementById('clock').textContent=nowUTC();const utc=document.getElementById('qsoUtc');if(settings.utcRunning!==false&&utc&&utc.dataset.edited!=='1')utc.value=utcInputValue();},1000);
 renderHome();
 </script>
 </body>
