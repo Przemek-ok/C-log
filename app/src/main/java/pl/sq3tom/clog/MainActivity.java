@@ -34,6 +34,10 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import android.content.ContentValues;
+import android.provider.MediaStore;
+import java.io.OutputStream;
+import java.io.IOException;
 
 public class MainActivity extends Activity {
     private static final String TAG = "C-log";
