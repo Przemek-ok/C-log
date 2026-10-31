@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#000000">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>C-log v0.17 testowa</title>
+<title>C-log v0.18 testowa</title>
 <style>
 :root{--bg:#000;--surface:#080808;--surface2:#111;--text:#fff;--muted:#bdbdbd;--line:#777;--accent:#ff2020;--accentText:#fff;--field:#050505;--danger:#ff3030}
 html[data-theme="light"]{--bg:#fff;--surface:#fff;--surface2:#f3f3f3;--text:#111;--muted:#555;--line:#777;--accent:#e51b23;--accentText:#fff;--field:#fff;--danger:#c9151c}
@@ -17,7 +17,7 @@ html{min-height:100vh}
 body{font-size:16px;padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px))}
 button,input,select{font:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
-.app{width:100%;max-width:520px;min-height:100vh;margin:auto;padding:36px 12px calc(24px + env(safe-area-inset-bottom, 0px));background:var(--bg);color:var(--text)}
+.app{width:100%;max-width:520px;min-height:100vh;margin:auto;padding:24px 10px calc(20px + env(safe-area-inset-bottom, 0px));background:var(--bg);color:var(--text)}
 header{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:6px;margin-bottom:10px}
 .brand{text-align:center} h1{margin:0;font-size:30px;line-height:1;font-weight:800;letter-spacing:-.5px}
 .brand-sub{margin-top:3px;color:var(--muted);font-size:11px;letter-spacing:.8px}
@@ -27,11 +27,11 @@ header{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:6
 .top-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:12px}
 .navtab{min-height:42px;border:2px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);font-weight:700;font-size:14px}
 .navtab.active{border-color:var(--accent);color:var(--accent)}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:12px;margin-bottom:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:9px;margin-bottom:8px}
 .section{margin:0 0 10px;font-size:22px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 label{display:block;margin:0 0 5px 2px;color:var(--text);font-size:13px;font-weight:600}
-input,select{width:100%;min-height:46px;padding:10px 11px;border:1px solid var(--line);border-radius:8px;outline:none;background:var(--field);color:var(--text);-webkit-text-fill-color:var(--text)}
+input,select{width:100%;min-height:44px;padding:8px 9px;border:1px solid var(--line);border-radius:8px;outline:none;background:var(--field);color:var(--text);-webkit-text-fill-color:var(--text)}
 input::placeholder{color:var(--muted);opacity:1;-webkit-text-fill-color:var(--muted)}
 input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(255,32,32,.18)}
 .call{font-size:25px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
@@ -40,10 +40,10 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(25
 .small-info{min-height:20px;margin-top:7px;color:var(--muted);font-size:13px}
 .reports{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .report-title{margin-bottom:5px;text-align:center;color:var(--muted);font-size:12px;font-weight:700}
-.report input{text-align:center;font-size:30px;font-weight:700}
+.report input{text-align:center;font-size:27px;font-weight:700}
 .quick{display:flex;gap:4px;margin-top:5px}
 .quick button{flex:1;min-height:36px;padding:5px 2px;border:1px solid var(--line);border-radius:7px;background:var(--surface2);color:var(--text);font-weight:700}
-.primary{width:100%;min-height:54px;border:1px solid var(--accent);border-radius:9px;background:var(--accent);color:var(--accentText);font-size:18px;font-weight:800}
+.primary{width:100%;min-height:48px;border:1px solid var(--accent);border-radius:9px;background:var(--accent);color:var(--accentText);font-size:18px;font-weight:800}
 .nav{display:none!important}
 .top-tabs{display:none!important}
 .nav button,.special button,.list-actions button,.back button{min-height:44px;padding:9px 7px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-weight:700}
@@ -101,7 +101,7 @@ let selectedQsoIds=new Set(); let holdDeleteTimer=null; let holdDeleteFired=fals
 let qsos=JSON.parse(localStorage.getItem(KEY)||'[]');
 let lists=JSON.parse(localStorage.getItem(LISTKEY)||'[]');
 let settings=JSON.parse(localStorage.getItem(SETTINGS)||JSON.stringify({
-  freq:'145.600', mode:'FM', power:'10', rx:'', tx:'', activeList:null, theme:'dark', utcRunning:true, homeLocator:'', lang:'pl', contactCache:{}
+  freq:'145.600', mode:'FM', power:'5', rx:'', tx:'', activeList:null, theme:'dark', utcRunning:true, homeLocator:'', lang:'pl', contactCache:{}
 }));
 if(!Array.isArray(settings.commentTemplates)) settings.commentTemplates=['POTA aktywacja','SOTA aktywacja','Praca przez przemiennik','Łączność bezpośrednia','Praca przez ISS','Dziękuję za QSO'];
 while(settings.commentTemplates.length<6) settings.commentTemplates.push('');
@@ -109,6 +109,7 @@ settings.commentTemplates=settings.commentTemplates.slice(0,6);
 if(typeof settings.utcRunning!=='boolean') settings.utcRunning=true;
 if(!settings.contactCache||typeof settings.contactCache!=='object') settings.contactCache={};
 if(!settings.lang) settings.lang='pl';
+if(!settings.power || settings.power==='10') settings.power='5';
 
 
 function flagForCountry(code){
@@ -146,10 +147,14 @@ function contactDisplay(data){
   return [country?(flagForCountry(code)+' '+country):'',grid?'📍 '+grid:'',dist!==null?'↔ '+dist+' km':''].filter(Boolean).join(' • ');
 }
 async function getPhoneLocation(){
-  return new Promise((resolve,reject)=>{
-    if(!navigator.geolocation){reject(new Error('Geolokalizacja niedostępna w tej wersji aplikacji'));return;}
-    navigator.geolocation.getCurrentPosition(pos=>resolve(pos),err=>reject(err),{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
-  });
+  if(!navigator.geolocation) throw new Error('Ta wersja Android WebView nie udostępnia geolokalizacji. Wymagana jest obsługa uprawnień GPS w części Android.');
+  const request=opts=>new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,opts));
+  try{return await request({enableHighAccuracy:true,timeout:25000,maximumAge:0});}
+  catch(first){
+    if(first&&first.code===1) throw new Error('Brak zgody na lokalizację. Zezwól aplikacji C-log na dostęp do lokalizacji w ustawieniach Androida.');
+    try{return await request({enableHighAccuracy:false,timeout:20000,maximumAge:120000});}
+    catch(second){throw new Error(second&&second.code===2?'Telefon nie udostępnił pozycji. Włącz lokalizację/GPS i spróbuj ponownie.':second&&second.code===3?'Upłynął czas oczekiwania na GPS. Spróbuj na zewnątrz.':'Nie udało się pobrać pozycji telefonu.');}
+  }
 }
 async function fillProjectFromPhone(project){
   try{
@@ -159,14 +164,16 @@ async function fillProjectFromPhone(project){
     project.latitude=c.latitude;project.longitude=c.longitude;
     project.telemetry=[`GPS ${c.latitude.toFixed(5)}, ${c.longitude.toFixed(5)}`,`dokładność ±${Math.round(c.accuracy)} m`,c.altitude!==null?`wysokość ${Math.round(c.altitude)} m n.p.m.`:'',`czas ${new Date(pos.timestamp).toISOString()}`].filter(Boolean).join(' | ');
     saveAll();toast('Pobrano lokalizację: '+grid);showLists();
-  }catch(e){toast('Nie udało się pobrać lokalizacji. Wpisz locator ręcznie.');}
+  }catch(e){toast((e&&e.message?e.message:'Nie udało się pobrać lokalizacji.')+' Wpisz locator ręcznie.');}
 }
 function saveContactCache(){
   const call=(document.getElementById('callsign')?.value||'').trim().toUpperCase();if(!call){toast('Najpierw wpisz znak');return;}
   const data={name:document.getElementById('contactName')?.value.trim()||'',qth:document.getElementById('contactQth')?.value.trim()||'',grid:document.getElementById('contactGrid')?.value.trim().toUpperCase()||'',country:document.getElementById('contactCountry')?.value.trim()||'',countryCode:document.getElementById('contactCountryCode')?.value.trim().toUpperCase()||''};
   settings.contactCache[call]=data;saveAll();toast('Dane znaku zapisane w pamięci C-log');updateContactInfo(data);
 }
+function updateManualContactVisibility(){const box=document.getElementById('manualContactFields');if(!box)return;const call=(document.getElementById('callsign')?.value||'').trim().toUpperCase();const c=settings.contactCache[call];const hasGrid=!!(c&&c.grid),hasCountry=!!(c&&c.country);box.style.display=(hasGrid&&hasCountry)?'none':'block';}
 function updateContactInfo(data){const el=document.getElementById('callerInfo');if(el){const extra=contactDisplay(data||{});el.textContent=extra||'Dane korespondenta zapisane lokalnie.';}}
+function toggleProjectPicker(){const p=document.getElementById('projectPicker');if(p)p.style.display=p.style.display==='none'?'block':'none';}
 function toggleUtcClock(){
   settings.utcRunning=!settings.utcRunning;
   const el=document.getElementById('qsoUtc');
@@ -186,7 +193,7 @@ function showSettings(){
     <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
     <div class="card">
       <h2 class="section">USTAWIENIA</h2>
-      <div class="list-item"><b>JĘZYK / LANGUAGE</b><div class="theme-note">Wybór języka jest zapamiętywany. Pełne tłumaczenie wszystkich ekranów będzie wdrażane etapami.</div><select id="languageSelect" onchange="settings.lang=this.value;saveAll();showSettings()"><option value="pl" ${settings.lang==='pl'?'selected':''}>Polski</option><option value="en" ${settings.lang==='en'?'selected':''}>English</option></select><label style="margin-top:8px">Mój locator / My grid locator</label><input id="homeLocatorSetting" value="${esc(settings.homeLocator||'')}" placeholder="JO82XX" maxlength="6"><button style="width:100%;margin-top:8px" onclick="settings.homeLocator=(document.getElementById('homeLocatorSetting')?.value||'').trim().toUpperCase();saveAll();toast('Zapisano locator stacji')">ZAPISZ LOCATOR</button></div>
+      <div class="list-item"><b>JĘZYK / LANGUAGE</b><div class="theme-note">Wybór języka jest zapamiętywany.</div><select id="languageSelect" onchange="settings.lang=this.value;saveAll();showSettings()"><option value="pl" ${settings.lang==='pl'?'selected':''}>Polski</option><option value="en" ${settings.lang==='en'?'selected':''}>English</option></select><label style="margin-top:8px">Mój locator / My grid locator</label><input id="homeLocatorSetting" value="${esc(settings.homeLocator||'')}" placeholder="JO82XX" maxlength="6"><button style="width:100%;margin-top:8px" onclick="settings.homeLocator=(document.getElementById('homeLocatorSetting')?.value||'').trim().toUpperCase();saveAll();toast('Zapisano locator stacji')">ZAPISZ LOCATOR</button></div>
       <div class="list-item">
         <b>WYGLĄD</b>
         <div class="theme-note">Domyślnie: czarne tło i biała czcionka. Wybierz wygląd aplikacji.</div>
@@ -325,7 +332,7 @@ function renderHome(editId=null){
   const rememberedCall=editing?.callsign||(settings.lastCallsign||''); const rememberedName=editing?.name||(settings.lastName||''); const rememberedQth=editing?.qth||(settings.lastQth||'');
   const formFreq=editing?.freq||settings.freq, formMode=editing?.mode||settings.mode, formPower=editing?.power||settings.power;
   document.getElementById('screen').innerHTML=`
-    ${settings.activeList?`<div class="active-badges"><span class="badge">● ${esc(settings.activeList)}</span></div>`:''}
+    <div class="active-badges"><button type="button" class="badge" style="cursor:pointer" onclick="toggleProjectPicker()">● ${settings.activeList?esc(settings.activeList):t('Wybierz projekt','Select project')} ▾</button><div id="projectPicker" style="display:none;width:100%">${lists.map(l=>`<button type="button" class="list-item" style="width:100%;text-align:left;color:var(--text)" onclick="activateListById(${l.id})">${esc(l.name)} — ${esc(l.type)}</button>`).join('')}<button type="button" class="list-item" style="width:100%;text-align:left" onclick="settings.activeList=null;saveAll();renderHome()">${t('Bez projektu','No project')}</button></div></div>
     <div class="card">
       <div class="row">
         <div><label>${t("Pasmo","Band")}</label><div id="band" class="band-value">${esc(editing?.band||bandFromFreq(formFreq)||'—')}</div></div>
@@ -334,25 +341,24 @@ function renderHome(editId=null){
       <div style="height:10px"></div>
       <div class="row">
         <div><label>${t("Mode","Mode")}</label><select id="mode"><option>AM</option><option>SSB</option><option>DMR</option><option>FM</option><option>C4FM</option><option>CW</option><option>FT8</option><option>FT4</option><option>FM SAT</option></select></div>
-        <div><label>${t("Moc","Power")}</label><input id="power" inputmode="decimal" value="${esc(formPower)}" placeholder="10"></div>
+        <div><label>${t("Moc","Power")}</label><input id="power" inputmode="decimal" value="${esc(formPower)}" placeholder="5"></div>
       </div>
     </div>
 
     <div class="card">
       <label>${t("Callsign","Callsign")}</label>
       <input id="callsign" class="call" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="SP3ABC" value="${esc(rememberedCall)}" oninput="callChanged()">
-      <div id="callerInfo" class="small-info">Dane korespondenta pojawią się tutaj.</div>
+      <div id="callerInfo" class="small-info">${t(t('Dane korespondenta pojawią się tutaj.','Contact details will appear here.'),'Contact details will appear here.')}</div>
       <div class="row" style="margin-top:8px">
-        <div><label>${t("Imię","Name")}</label><input id="contactName" autocomplete="off" placeholder="Imię korespondenta" value="${esc(rememberedName)}"></div>
-        <div><label>QTH</label><input id="contactQth" autocomplete="off" placeholder="Miejscowość" value="${esc(rememberedQth)}"></div>
+        <div><label>${t("Imię","Name")}</label><input id="contactName" autocomplete="off" placeholder="${t('Imię korespondenta','Contact name')}" value="${esc(rememberedName)}"></div>
+        <div><label>QTH</label><input id="contactQth" autocomplete="off" placeholder="${t('Miejscowość','Town / QTH')}" value="${esc(rememberedQth)}"></div>
       </div>
-      <div class="row" style="margin-top:8px">
-        <div><label>Locator korespondenta</label><input id="contactGrid" placeholder="JO82XX" maxlength="6"></div>
-        <div><label>Kraj</label><input id="contactCountry" placeholder="Kraj"></div>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <div><label>Kod kraju (np. DE)</label><input id="contactCountryCode" placeholder="PL" maxlength="2"></div>
-        <div style="display:flex;align-items:end"><button type="button" onclick="saveContactCache()" style="width:100%;min-height:46px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--text);font-weight:700">ZAPISZ DANE ZNAKU</button></div>
+      <div id="manualContactFields" style="display:none;margin-top:8px">
+        <div class="row">
+          <div><label>${t("Locator","Grid locator")}</label><input id="contactGrid" placeholder="JO82XX" maxlength="6"></div>
+          <div><label>${t("Kraj","Country")}</label><input id="contactCountry" placeholder="${t("Kraj","Country")}"></div>
+        </div>
+        <div style="margin-top:8px"><button type="button" onclick="saveContactCache()" style="width:100%;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--text);font-weight:700">${t("ZAPISZ DANE ZNAKU","SAVE CALLSIGN DATA")}</button></div>
       </div>
     </div>
 
@@ -376,7 +382,7 @@ function renderHome(editId=null){
       </div>
       <label>${t("Komentarz (wybierz szablon lub wpisz własny)","Comment (choose a template or enter your own)")}</label>
       <div class="comment-templates">${settings.commentTemplates.map((v,i)=>v?`<button type="button" onclick="applyCommentTemplate(${i})">${esc(v.length>18?v.slice(0,18)+'…':v)}</button>`:'').join('')}</div>
-      <textarea id="comment" placeholder="Wybierz szablon powyżej albo wpisz własny komentarz">${esc(editing?.comment||'')}</textarea>
+      <textarea id="comment" placeholder="${t('Wybierz szablon powyżej albo wpisz własny komentarz','Choose a template above or enter your own comment')}">${esc(editing?.comment||'')}</textarea>
     </div>
 
     <button class="primary" onclick="saveQSO()">${editing?(settings.lang==='en'?'SAVE CHANGES':'ZAPISZ ZMIANY'):t('ZAPISZ QSO','SAVE QSO')}</button>
@@ -396,6 +402,7 @@ function renderHome(editId=null){
   call.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupCallsign().finally(()=>rx.focus());}});
   call.addEventListener('blur',()=>{ if(call.value.trim()) lookupCallsign(); });
   ['contactGrid','contactCountry','contactCountryCode'].forEach(id=>document.getElementById(id)?.addEventListener('input',()=>{const data={grid:document.getElementById('contactGrid').value,country:document.getElementById('contactCountry').value,countryCode:document.getElementById('contactCountryCode').value};updateContactInfo(data);}));
+  updateManualContactVisibility();
   rx.addEventListener('input',()=>{if(rx.value.length>=2)tx.focus();});
   rx.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();tx.focus();}});
   tx.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('comment').focus();}});
@@ -414,7 +421,7 @@ function callChanged(){
   const info=document.getElementById('callerInfo');
   if(!c){info.textContent='Wpisz znak korespondenta.';return;}
   const cached=settings.contactCache[c];
-  if(cached){['contactName','contactQth','contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[cached.name,cached.qth,cached.grid,cached.country,cached.countryCode][i];if(el&&v)el.value=v;});updateContactInfo(cached);return;}
+  if(cached){['contactName','contactQth','contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[cached.name,cached.qth,cached.grid,cached.country,cached.countryCode][i];if(el&&v)el.value=v;});updateContactInfo(cached);updateManualContactVisibility();return;}
   const old=qsos.find(q=>q.callsign===c);
   if(old){
     info.textContent='Znaleziono wcześniejszą łączność. Sprawdź lub popraw dane korespondenta.';
@@ -422,18 +429,18 @@ function callChanged(){
     if(name && !name.value) name.value=old.name||'';
     if(qth && !qth.value) qth.value=old.qth||'';
   } else {
-    info.textContent='Brak danych w lokalnym logu. Uzupełnij imię i QTH ręcznie; wyszukiwanie QRZ wymaga osobnej autoryzacji API.';
+    info.textContent='Brak pełnych danych automatycznych. Uzupełnij brakujące pola poniżej; możesz zapisać je w pamięci.';updateManualContactVisibility();
   }
 }
 
 function clearCurrentEntry(){
-  ['callsign','contactName','contactQth','rx','tx','comment'].forEach(id=>{
+  ['callsign','contactName','contactQth','contactGrid','contactCountry','contactCountryCode','rx','tx','comment'].forEach(id=>{
     const el=document.getElementById(id); if(el)el.value='';
   });
   const utc=document.getElementById('qsoUtc');
   if(utc){utc.value=utcInputValue();utc.dataset.edited='0';}
   const info=document.getElementById('callerInfo');
-  if(info)info.textContent='Wpisz znak korespondenta.';
+  if(info)info.textContent='Wpisz znak korespondenta.';updateManualContactVisibility();
   updateBand();
   const call=document.getElementById('callsign'); if(call)call.focus();
   toast('Wyczyszczono bieżący wpis; ustawienia pozostały bez zmian');
@@ -494,7 +501,7 @@ function showQSOList(){
   <div class="back"><button onclick="renderHome()">← LOGUJ</button></div>
   <div class="card"><h2 class="section">LISTA QSO</h2><input id="search" placeholder="🔍 Szukaj callsign / pasmo" oninput="renderItems()">
     <div class="list-actions"><button onclick="selectVisibleQSO(true)">ZAZNACZ WIDOCZNE</button><button onclick="selectVisibleQSO(false)">ODZNACZ</button></div>
-    <div class="list-actions"><button onclick="deleteSelectedQSO()">USUŃ ZAZNACZONE</button><button id="holdDeleteLog" style="background:var(--danger);color:#fff;border-color:var(--danger)" onpointerdown="startHoldDeleteLog()" onpointerup="cancelHoldDeleteLog()" onpointerleave="cancelHoldDeleteLog()" onpointercancel="cancelHoldDeleteLog()" onclick="if(holdDeleteFired){holdDeleteFired=false;return;}toast('Przytrzymaj przycisk przez 1 sekundę, aby usunąć cały log')">PRZYTRZYMAJ 1 S — USUŃ LOG</button></div>
+    <div class="list-actions"><button onclick="deleteSelectedQSO()">USUŃ ZAZNACZONE</button><button id="deleteLog" style="background:var(--danger);color:#fff;border-color:var(--danger)" onclick="deleteEntireLog()">USUŃ LOG</button></div>
     <div class="theme-note">Usunięcie jest trwałe. Przytrzymaj czerwony przycisk przez 1 sekundę, aby usunąć wszystkie QSO.</div>
   </div>
   <div id="items"></div>`;
@@ -521,6 +528,7 @@ function deleteSelectedQSO(){
   if(!confirm('Usunąć '+ids.size+' zaznaczonych QSO? Tej operacji nie można cofnąć.'))return;
   qsos=qsos.filter(q=>!ids.has(q.id));selectedQsoIds=new Set();saveAll();toast('Usunięto zaznaczone QSO');renderItems();
 }
+function deleteEntireLog(){if(!qsos.length){toast('Log jest już pusty');return;}if(!confirm('Usunąć wszystkie zapisane QSO? Projektów to nie usunie.'))return;qsos=[];selectedQsoIds=new Set();saveAll();toast('Cały log QSO usunięty');showQSOList();}
 function startHoldDeleteLog(){
   holdDeleteFired=false;clearTimeout(holdDeleteTimer);
   holdDeleteTimer=setTimeout(()=>{holdDeleteFired=true;if(!qsos.length){toast('Log jest już pusty');return;}if(confirm('OSTRZEŻENIE: usunąć WSZYSTKIE zapisane QSO? Projektów i list aktywacji to nie usunie.')){qsos=[];selectedQsoIds=new Set();saveAll();toast('Cały log QSO usunięty');showQSOList();}},1000);
@@ -571,7 +579,7 @@ async function lookupCallsign(){
   const call=(document.getElementById('callsign')?.value||'').trim().toUpperCase();
   const info=document.getElementById('callerInfo');
   if(!call)return;
-  const cached=settings.contactCache[call];if(cached){['contactName','contactQth','contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[cached.name,cached.qth,cached.grid,cached.country,cached.countryCode][i];if(el&&v)el.value=v;});updateContactInfo(cached);return;}
+  const cached=settings.contactCache[call];if(cached){['contactName','contactQth','contactGrid','contactCountry','contactCountryCode'].forEach((id,i)=>{const el=document.getElementById(id);const v=[cached.name,cached.qth,cached.grid,cached.country,cached.countryCode][i];if(el&&v)el.value=v;});updateContactInfo(cached);updateManualContactVisibility();return;}
   if(!settings.qrzLookupUrl)return;
   const old=qsos.find(q=>q.callsign===call);
   if(old){
@@ -713,7 +721,7 @@ function downloadADIF(records,filename,project){
     const bandMap={'2200 m':'2200M','630 m':'630M','160 m':'160M','80 m':'80M','60 m':'60M','40 m':'40M','30 m':'30M','20 m':'20M','17 m':'17M','15 m':'15M','12 m':'12M','10 m':'10M','6 m':'6M','4 m':'4M','2 m':'2M','70 cm':'70CM','23 cm':'23CM','13 cm':'13CM','9 cm':'9CM','6 cm':'6CM','3 cm':'3CM','1.25 cm':'1.25CM','6 mm':'6MM'};
     return adifField('CALL',q.callsign)+adifField('QSO_DATE',d.slice(0,8))+adifField('TIME_ON',d.slice(8,12))+adifField('BAND',bandMap[q.band]||q.band)+adifField('FREQ',freqMHz)+adifField('MODE',mode)+adifField('RST_RCVD',q.rx)+adifField('RST_SENT',q.tx)+adifField('TX_PWR',q.power)+adifField('NAME',q.name)+adifField('QTH',q.qth)+adifField('COMMENT',q.comment)+(project?adifField('MY_GRIDSQUARE',project.locator||project.location||'')+adifField('MY_SIG',project.type||'')+adifField('MY_SIG_INFO',[project.name||'',project.telemetry||''].filter(Boolean).join(' | ')):'')+'<EOR>\n';
   }).join('');
-  const blob=new Blob([`ADIF Export from C-log v0.17\n<ADIF_VER:5>3.1.4\n<PROGRAMID:5>C-log\n<EOH>\n`,data],{type:'application/octet-stream'});
+  const blob=new Blob([`ADIF Export from C-log v0.18\n<ADIF_VER:5>3.1.4\n<PROGRAMID:5>C-log\n<EOH>\n`,data],{type:'application/octet-stream'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
   toast(project?'Eksport projektu przygotowany':'Plik ADIF przygotowany — wgraj go w QRZ Logbook');
 }
