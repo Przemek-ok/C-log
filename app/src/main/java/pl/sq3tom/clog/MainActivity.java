@@ -2,6 +2,9 @@ package pl.sq3tom.clog;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.Manifest;
+import android.content.pm.PackageManager;
+
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.net.Uri;
@@ -34,8 +37,12 @@ import java.net.URL;
 
 public class MainActivity extends Activity {
     private static final String TAG = "C-log";
-    private static final String LATEST_API = "https://api.github.com/repos/Przemek-ok/C-log/releases/latest";
-    private WebView webView;
+private static final String LATEST_API = "https://api.github.com/repos/Przemek-ok/C-log/releases/latest";
+private static final int LOCATION_PERMISSION_REQUEST = 1001;
+
+private WebView webView;
+private android.webkit.GeolocationPermissions.Callback geoCallback;
+private String geoOrigin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +52,11 @@ public class MainActivity extends Activity {
         setContentView(webView);
 
         WebSettings settings = webView.getSettings();
+        WebSettings settings = webView.getSettings();
+        settings.setGeolocationEnabled(true);
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setDatabaseEnabled(true);
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
@@ -84,16 +96,66 @@ public class MainActivity extends Activity {
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public boolean onConsoleMessage(ConsoleMessage message) {
-                Log.e(TAG, "JS: " + message.message() + " @" + message.lineNumber() + " " + message.sourceId());
-                return true;
-            }
-        });
+    @Override
+    public boolean onConsoleMessage(ConsoleMessage message) {
+        Log.e(TAG, "JS: " + message.message() + " @" + message.lineNumber() + " " + message.sourceId());
+        return true;
+    }
+
+    @Override
+    public void onGeolocationPermissionsShowPrompt(
+            String origin,
+            android.webkit.GeolocationPermissions.Callback callback) {
+
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+                || checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+
+            callback.invoke(origin, true, false);
+
+        } else {
+            geoOrigin = origin;
+            geoCallback = callback;
+
+            requestPermissions(
+                    new String[]{
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                    },
+                    LOCATION_PERMISSION_REQUEST
+            );
+        }
+    }
+});
 
         webView.loadUrl("https://appassets.androidplatform.net/assets/index.html");
     }
+@Override
+public void onRequestPermissionsResult(
+        int requestCode,
+        String[] permissions,
+        int[] grantResults) {
 
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+    if (requestCode == LOCATION_PERMISSION_REQUEST) {
+        boolean granted = false;
+
+        for (int result : grantResults) {
+            if (result == PackageManager.PERMISSION_GRANTED) {
+                granted = true;
+                break;
+            }
+        }
+
+        if (geoCallback != null) {
+            geoCallback.invoke(geoOrigin, granted, false);
+            geoCallback = null;
+            geoOrigin = null;
+        }
+    }
+}
     private class UpdateBridge {
         @JavascriptInterface
         public void checkForUpdate() {
