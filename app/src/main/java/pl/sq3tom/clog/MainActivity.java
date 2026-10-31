@@ -52,11 +52,7 @@ private String geoOrigin;
         setContentView(webView);
 
         WebSettings settings = webView.getSettings();
-        WebSettings settings = webView.getSettings();
         settings.setGeolocationEnabled(true);
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setDatabaseEnabled(true);
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
